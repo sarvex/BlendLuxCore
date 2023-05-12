@@ -71,10 +71,10 @@ def render_model_thumbnail(assetname, blendfile, thumbnail, samples):
     scene = context.scene
     name = basename(dirname(dirname(dirname(__file__))))
     user_preferences = context.preferences.addons[name].preferences
-    
+
     with bpy.data.libraries.load(blendfile, link=True) as (data_from, data_to):
-        data_to.objects = [name for name in data_from.objects]
-   
+        data_to.objects = list(data_from.objects)
+
     # Add new collection, where the assets are placed into
     col = bpy.data.collections.new(assetname)
     # Add parent empty for asset collection
@@ -88,14 +88,14 @@ def render_model_thumbnail(assetname, blendfile, thumbnail, samples):
     run()
     scene.collection.objects.link(main_object)
 
-    bbox_min, bbox_max = calc_bbox(context, data_to.objects) 
+    bbox_min, bbox_max = calc_bbox(context, data_to.objects)
     print(bbox_min)
     print(bbox_max)
-    
+
     bbox_center = 0.5 * Vector((bbox_max[0] + bbox_min[0], bbox_max[1] + bbox_min[1], 0))
-    
+
     scale_size = 2 * max(abs(bbox_max[0] - bbox_min[0]), abs(bbox_max[2] - bbox_min[2]))
-    
+
     background = [
         bpy.data.objects['Camera'],
         bpy.data.objects['Stage'],
@@ -104,18 +104,18 @@ def render_model_thumbnail(assetname, blendfile, thumbnail, samples):
         bpy.data.objects['Room'],
         bpy.data.objects['Top Area'],
         bpy.data.objects['Backlight Area']]
-        
+
     camera = bpy.data.objects['Camera']
-        
+
     select(background)
-    context.scene.tool_settings.transform_pivot_point = 'CURSOR'  
+    context.scene.tool_settings.transform_pivot_point = 'CURSOR'
     bpy.ops.transform.resize(value=(scale_size, scale_size, scale_size), center_override=(0.6, 0, 0))
 
     bpy.ops.object.select_all(action='DESELECT')
-    
+
     camera.location.z = 0.5 * abs(bbox_max[2] - bbox_min[2])
-    
-        
+
+
     main_object.empty_display_size = 0.5 * max(bbox_max[0] - bbox_min[0], bbox_max[1] - bbox_min[1],
                                                bbox_max[2] - bbox_min[2])
 
@@ -124,7 +124,7 @@ def render_model_thumbnail(assetname, blendfile, thumbnail, samples):
     main_object.empty_display_size = 0.5*max(bbox_max[0] - bbox_min[0], bbox_max[1] - bbox_min[1], bbox_max[2] - bbox_min[2])
 
     col.instance_offset = bbox_center
-            
+
     context.scene.view_settings.gamma = 1
     context.scene.view_settings.exposure = 1
     context.scene.view_settings.look = 'Very High Contrast'
@@ -133,7 +133,7 @@ def render_model_thumbnail(assetname, blendfile, thumbnail, samples):
     context.scene.luxcore.halt.samples = int(samples)
     context.scene.render.image_settings.file_format = 'JPEG'
     context.scene.render.filepath = thumbnail
-    
+
     bpy.ops.render.render(write_still = True)
 
 
@@ -143,11 +143,13 @@ argv = argv[argv.index("--") + 1:]
 
 blendfile = argv[0]
 assetname = splitext(basename(argv[0]))[0]
-thumbnail = join(dirname(dirname(argv[0])), 'preview', 'full', 'local', assetname + ".jpg")
+thumbnail = join(
+    dirname(dirname(argv[0])), 'preview', 'full', 'local', f"{assetname}.jpg"
+)
 samples = argv[1]
 type = argv[2]
 
-if type == 'model':
-    render_model_thumbnail(assetname, blendfile, thumbnail, samples)
-elif type == 'material':
+if type == 'material':
     render_material_thumbnail(assetname, blendfile, thumbnail, samples)
+elif type == 'model':
+    render_model_thumbnail(assetname, blendfile, thumbnail, samples)

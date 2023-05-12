@@ -55,5 +55,5 @@ class LuxCoreNodeTexBrick(LuxCoreNodeTexture, bpy.types.Node):
             "mortarsize": self.mortarsize,
             "brickrun": self.brickrun / 100,
         }
-        definitions.update(self.inputs["3D Mapping"].export(exporter, depsgraph, props))
+        definitions |= self.inputs["3D Mapping"].export(exporter, depsgraph, props)
         return self.create_props(props, definitions, luxcore_name)

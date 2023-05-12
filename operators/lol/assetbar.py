@@ -48,9 +48,11 @@ def draw_callback_2d(self, context):
         area1 = self.area
         window1 = self.window
         go = True
-        if len(area.spaces[0].region_quadviews) > 0:
-            if area.spaces[0].region_3d != context.region_data:
-                go = False
+        if (
+            len(area.spaces[0].region_quadviews) > 0
+            and area.spaces[0].region_3d != context.region_data
+        ):
+            go = False
 
     except:
         go = False
@@ -100,19 +102,21 @@ def draw_callback_3d(self, context):
 
     ui_props = context.scene.luxcoreOL.ui
 
-    if ui_props.dragging and ui_props.asset_type == 'MODEL':
-        if ui_props.draw_snapped_bounds:
-            bbox_min = Vector(ui_props.snapped_bbox_min)
-            bbox_max = Vector(ui_props.snapped_bbox_max)
-            bbox_center = 0.5 * Vector((bbox_max[0] + bbox_min[0], bbox_max[1] + bbox_min[1], 0.0))
+    if (
+        ui_props.dragging
+        and ui_props.asset_type == 'MODEL'
+        and ui_props.draw_snapped_bounds
+    ):
+        bbox_min = Vector(ui_props.snapped_bbox_min)
+        bbox_max = Vector(ui_props.snapped_bbox_max)
+        bbox_center = 0.5 * Vector((bbox_max[0] + bbox_min[0], bbox_max[1] + bbox_min[1], 0.0))
 
-            ui_bgl.draw_bbox(ui_props.snapped_location, ui_props.snapped_rotation, bbox_min-bbox_center, bbox_max-bbox_center)
+        ui_bgl.draw_bbox(ui_props.snapped_location, ui_props.snapped_rotation, bbox_min-bbox_center, bbox_max-bbox_center)
 
 
 def draw_callback_2d_search(self, context):
     scene = context.scene
     ui_props = scene.luxcoreOL.ui
-    assetbar_props = scene.luxcoreOL.ui.assetbar
     assets = utils.get_search_props(context)
 
     if ui_props.local:
@@ -128,12 +132,12 @@ def draw_callback_2d_search(self, context):
     hcolor = (1, 1, 1, .07)
     grey = (hcolor[0] * .8, hcolor[1] * .8, hcolor[2] * .8, .5)
     white = (1, 1, 1, 0.2)
-    green = (.2, 1, .2, .7)
     highlight = (1, 1, 1, .3)
 
     # background of asset bar
 
     if not ui_props.dragging:
+        assetbar_props = scene.luxcoreOL.ui.assetbar
         if len(assets) == 0 or assetbar_props.wcount == 0:
             return
 
@@ -171,6 +175,7 @@ def draw_callback_2d_search(self, context):
                                       ui_props.thumb_size, utils.get_thumbnail('arrow_right.png'), 1)
 
 
+            green = (.2, 1, .2, .7)
             # Draw asset thumbnails
             for b in range(0, h_draw):
                 w_draw = min(assetbar_props.wcount, len(assets) - b * assetbar_props.wcount - ui_props.scrolloffset)
@@ -188,7 +193,6 @@ def draw_callback_2d_search(self, context):
                         img = asset['thumbnail']
 
                     w = int(ui_props.thumb_size * img.size[0] / max(img.size[0], img.size[1]))
-                    h = int(ui_props.thumb_size * img.size[1] / max(img.size[0], img.size[1]))
                     crop = (0, 0, 1, 1)
 
                     if img.size[0] > img.size[1]:
@@ -202,6 +206,7 @@ def draw_callback_2d_search(self, context):
                                              w + 2 * assetbar_props.highlight_margin, w + 2 * assetbar_props.highlight_margin,
                                              highlight)
                     else:
+                        h = int(ui_props.thumb_size * img.size[1] / max(img.size[0], img.size[1]))
                         ui_bgl.draw_rect(x, y, w, h, white)
 
                     if assets[index]['downloaded'] > 0:

@@ -110,9 +110,9 @@ class LUXCORE_RENDER_PT_halt_conditions(Panel, RenderButtonsPanel):
         draw(layout, context, halt)
 
         layers = context.scene.view_layers
-        overriding_layers = [layer for layer in layers if layer.use and layer.luxcore.halt.enable]
-
-        if overriding_layers:
+        if overriding_layers := [
+            layer for layer in layers if layer.use and layer.luxcore.halt.enable
+        ]:
             layout.separator()
 
             col = layout.column(align=True)
@@ -141,10 +141,10 @@ class LUXCORE_RENDER_PT_halt_conditions(Panel, RenderButtonsPanel):
                     conditions.append("Noise (%d)" % halt.noise_thresh)
 
                 if conditions:
-                    text = layer.name + ": " + ", ".join(conditions)
+                    text = f"{layer.name}: " + ", ".join(conditions)
                     col.label(text=text, icon="RENDERLAYERS")
                 else:
-                    text = layer.name + ": No Halt Condition!"
+                    text = f"{layer.name}: No Halt Condition!"
                     col.label(text=text, icon=icons.ERROR)
 
 

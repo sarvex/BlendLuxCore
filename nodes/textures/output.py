@@ -28,7 +28,7 @@ class LuxCoreNodeTexOutput(bpy.types.Node, LuxCoreNodeOutput):
 
         if not self.inputs["Color"].is_linked:
             # We need a helper texture
-            helper_prefix = "scene.textures." + luxcore_name + "."
+            helper_prefix = f"scene.textures.{luxcore_name}."
             helper_defs = {
                 "type": "constfloat3",
                 "value": color,

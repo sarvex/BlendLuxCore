@@ -37,5 +37,5 @@ class LuxCoreNodeTexBombing(LuxCoreNodeTexture, bpy.types.Node):
             "bullet.randomscale.range": self.random_scale * 5,
             "bullet.randomrotation.enable": self.use_random_rotation,
         }
-        definitions.update(self.inputs["2D Mapping"].export(exporter, depsgraph, props))
+        definitions |= self.inputs["2D Mapping"].export(exporter, depsgraph, props)
         return self.create_props(props, definitions, luxcore_name)

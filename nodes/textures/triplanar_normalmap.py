@@ -54,15 +54,15 @@ class LuxCoreNodeTexTriplanarNormalmap(LuxCoreNodeTexture, bpy.types.Node):
             "texture2": tex2,
             "texture3": tex3,
         }
-        definitions.update(self.inputs["3D Mapping"].export(exporter, depsgraph, props))
+        definitions |= self.inputs["3D Mapping"].export(exporter, depsgraph, props)
 
         if not utils_node.get_link(self.inputs["3D Mapping"]):
             definitions["mapping.type"] = "localmapping3d"
 
         luxcore_name = self.create_props(props, definitions, luxcore_name)
-        
-        tex_name = luxcore_name + "_normalmap"
-        helper_prefix = "scene.textures." + tex_name + "."
+
+        tex_name = f"{luxcore_name}_normalmap"
+        helper_prefix = f"scene.textures.{tex_name}."
         helper_defs = {
             "type": "normalmap",
             "texture": luxcore_name,

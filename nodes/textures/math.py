@@ -136,19 +136,18 @@ class LuxCoreNodeTexMath(LuxCoreNodeTexture, bpy.types.Node):
 
         luxcore_name = self.create_props(props, definitions, luxcore_name)
 
-        if self.clamp_output and self.mode != "clamp":
-            # Implicitly create a clamp texture with unique name
-            tex_name = luxcore_name + "_clamp"
-            helper_prefix = "scene.textures." + tex_name + "."
-            helper_defs = {
-                "type": "clamp",
-                "texture": luxcore_name,
-                "min": 0,
-                "max": 1,
-            }
-            props.Set(utils.create_props(helper_prefix, helper_defs))
-
-            # The helper texture gets linked in front of this node
-            return tex_name
-        else:
+        if not self.clamp_output or self.mode == "clamp":
             return luxcore_name
+            # Implicitly create a clamp texture with unique name
+        tex_name = f"{luxcore_name}_clamp"
+        helper_prefix = f"scene.textures.{tex_name}."
+        helper_defs = {
+            "type": "clamp",
+            "texture": luxcore_name,
+            "min": 0,
+            "max": 1,
+        }
+        props.Set(utils.create_props(helper_prefix, helper_defs))
+
+        # The helper texture gets linked in front of this node
+        return tex_name

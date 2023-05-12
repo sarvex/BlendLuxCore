@@ -32,7 +32,7 @@ class LuxCoreNodeTexPointiness(LuxCoreNodeTexture, bpy.types.Node):
         # Pointiness is a hitpointalpha texture behind the scenes, just that it implicitly enables pointiness
         # calculation on the mesh (handled in luxcore object export) and has some nice wrapping to get only part of
         # the pointiness information (see code below)
-        
+
         definitions = {
             "type": "hitpointalpha",
         }
@@ -41,8 +41,8 @@ class LuxCoreNodeTexPointiness(LuxCoreNodeTexture, bpy.types.Node):
 
         if self.curvature_mode == "both":
             # Pointiness values are in [-1..1] range originally
-            name_abs = luxcore_name + "_abs"
-            helper_prefix = "scene.textures." + name_abs + "."
+            name_abs = f"{luxcore_name}_abs"
+            helper_prefix = f"scene.textures.{name_abs}."
             helper_defs = {
                 "type": "abs",
                 "texture": luxcore_name,
@@ -53,8 +53,8 @@ class LuxCoreNodeTexPointiness(LuxCoreNodeTexture, bpy.types.Node):
 
         elif self.curvature_mode == "concave":
             # Only use the positive values of the pointiness information
-            name_clamp = luxcore_name + "_clamp"
-            helper_prefix = "scene.textures." + name_clamp + "."
+            name_clamp = f"{luxcore_name}_clamp"
+            helper_prefix = f"scene.textures.{name_clamp}."
             helper_defs = {
                 "type": "clamp",
                 "texture": luxcore_name,
@@ -67,8 +67,8 @@ class LuxCoreNodeTexPointiness(LuxCoreNodeTexture, bpy.types.Node):
 
         elif self.curvature_mode == "convex":
             # Only use the negative values of the pointiness information by first flipping the values
-            name_flip = luxcore_name + "_flip"
-            helper_prefix = "scene.textures." + name_flip + "."
+            name_flip = f"{luxcore_name}_flip"
+            helper_prefix = f"scene.textures.{name_flip}."
             helper_defs = {
                 "type": "scale",
                 "texture1": luxcore_name,
@@ -76,8 +76,8 @@ class LuxCoreNodeTexPointiness(LuxCoreNodeTexture, bpy.types.Node):
             }
             props.Set(utils.create_props(helper_prefix, helper_defs))
 
-            name_clamp = luxcore_name + "_clamp"
-            helper_prefix = "scene.textures." + name_clamp + "."
+            name_clamp = f"{luxcore_name}_clamp"
+            helper_prefix = f"scene.textures.{name_clamp}."
             helper_defs = {
                 "type": "clamp",
                 "texture": name_flip,
@@ -91,8 +91,8 @@ class LuxCoreNodeTexPointiness(LuxCoreNodeTexture, bpy.types.Node):
         multiplier = self.inputs["Multiplier"].export(exporter, depsgraph, props)
 
         if multiplier != 1:
-            multiplier_name = luxcore_name + "_multiplier"
-            helper_prefix = "scene.textures." + multiplier_name + "."
+            multiplier_name = f"{luxcore_name}_multiplier"
+            helper_prefix = f"scene.textures.{multiplier_name}."
             helper_defs = {
                 "type": "scale",
                 "texture1": luxcore_name,

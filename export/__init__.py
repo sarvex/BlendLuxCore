@@ -103,7 +103,7 @@ class Exporter(object):
             # Don't export camera blur in viewport
             camera_blur = blur_settings.camera_blur and not context
             self.motion_blur_enabled = blur_settings.enable and (blur_settings.object_blur or camera_blur)\
-                                       and (blur_settings.shutter > 0)
+                                           and (blur_settings.shutter > 0)
 
         # Objects and lights
         is_viewport_render = context is not None
@@ -118,18 +118,21 @@ class Exporter(object):
 
         # Motion blur
         # Motion blur seems not to work in viewport render, i.e. matrix_world is the same on every frame
-        if not context and utils.is_valid_camera(scene.camera):
-            if self.motion_blur_enabled:
-                motion_blur_props, cam_moving = motion_blur.convert(context, engine, scene, depsgraph,
-                                                                    self.object_cache2.exported_objects)
+        if (
+            not context
+            and utils.is_valid_camera(scene.camera)
+            and self.motion_blur_enabled
+        ):
+            motion_blur_props, cam_moving = motion_blur.convert(context, engine, scene, depsgraph,
+                                                                self.object_cache2.exported_objects)
 
-                if cam_moving:
-                    # Re-export the camera with motion blur enabled
-                    # (This is fast and we only have to step through the scene once in total, not twice)
-                    camera_props = camera.convert(self, scene, depsgraph, context, cam_moving)
-                    motion_blur_props.Set(camera_props)
+            if cam_moving:
+                # Re-export the camera with motion blur enabled
+                # (This is fast and we only have to step through the scene once in total, not twice)
+                camera_props = camera.convert(self, scene, depsgraph, context, cam_moving)
+                motion_blur_props.Set(camera_props)
 
-                scene_props.Set(motion_blur_props)
+            scene_props.Set(motion_blur_props)
 
         # World
         world_props = world.convert(self, depsgraph, scene, is_viewport_render)
@@ -154,7 +157,7 @@ class Exporter(object):
 
         # Convert config at last because all lightgroups and passes have to be already defined
         config_props = config.convert(self, scene, context, engine)
-        if str(config_props) == "":
+        if not str(config_props):
             # Config props are empty: there was a critical error in config export, we can't render
             raise Exception("Errors in config, check error log")
 

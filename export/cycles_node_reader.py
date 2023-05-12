@@ -43,8 +43,7 @@ def black(luxcore_name="__BLACK__"):
 
 
 def _socket(socket, props, material, obj_name, group_node):
-    link = utils_node.get_link(socket)
-    if link:
+    if link := utils_node.get_link(socket):
         return _node(link.from_node, link.from_socket, props, material, None, obj_name, group_node)
 
     if not hasattr(socket, "default_value"):

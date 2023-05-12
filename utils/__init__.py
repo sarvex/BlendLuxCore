@@ -38,7 +38,7 @@ def make_key_from_bpy_struct(bpy_struct):
 def make_key_from_instance(dg_obj_instance):
     if dg_obj_instance.is_instance:
         key = make_key(dg_obj_instance.object)
-        key += "_" + make_key(dg_obj_instance.parent)
+        key += f"_{make_key(dg_obj_instance.parent)}"
         key += persistent_id_to_str(dg_obj_instance.persistent_id)
     else:
         key = make_key(dg_obj_instance.object.original)
@@ -53,7 +53,7 @@ def get_pretty_name(datablock):
     name = datablock.name
 
     if hasattr(datablock, "type"):
-        name = datablock.type.title() + "_" + name
+        name = f"{datablock.type.title()}_{name}"
 
     return name
 
@@ -79,10 +79,7 @@ def get_luxcore_name(datablock, is_viewport_render=True):
 
 
 def obj_from_key(key, objects):
-    for obj in objects:
-        if key == make_key(obj):
-            return obj
-    return None
+    return next((obj for obj in objects if key == make_key(obj)), None)
 
 
 def persistent_id_to_str(persistent_id):
@@ -142,12 +139,7 @@ def matrix_to_list(matrix, invert=False):
 
 
 def list_to_matrix(lst):
-    return mathutils.Matrix([
-        lst[0:4],
-        lst[4:8],
-        lst[8:12],
-        lst[12:16],
-    ])
+    return mathutils.Matrix([lst[:4], lst[4:8], lst[8:12], lst[12:16]])
 
 
 def calc_filmsize_raw(scene, context=None):
@@ -212,35 +204,31 @@ def calc_filmsize(scene, context=None):
 
 
 def calc_blender_border(scene, context=None):
-    render = scene.render
-
     if context and context.region_data.view_perspective in ("ORTHO", "PERSP"):
         # Viewport camera
         border_max_x = context.space_data.render_border_max_x
         border_max_y = context.space_data.render_border_max_y
         border_min_x = context.space_data.render_border_min_x
         border_min_y = context.space_data.render_border_min_y
+        use_border = context.space_data.use_render_border
     else:
+        render = scene.render
+
         # Final camera
         border_max_x = render.border_max_x
         border_max_y = render.border_max_y
         border_min_x = render.border_min_x
         border_min_y = render.border_min_y
 
-    if context and context.region_data.view_perspective in ("ORTHO", "PERSP"):
-        use_border = context.space_data.use_render_border
-    else:
         use_border = render.use_border
 
     if use_border:
         blender_border = [border_min_x, border_max_x, border_min_y, border_max_y]
         # Round all values to avoid running into problems later
         # when a value is for example 0.699999988079071
-        blender_border = [round(value, 6) for value in blender_border]
+        return [round(value, 6) for value in blender_border]
     else:
-        blender_border = [0, 1, 0, 1]
-
-    return blender_border
+        return [0, 1, 0, 1]
 
 
 def calc_screenwindow(zoom, shift_x, shift_y, scene, context=None):
@@ -255,32 +243,28 @@ def calc_screenwindow(zoom, shift_x, shift_y, scene, context=None):
     scale = 1
     offset_x = 0
     offset_y = 0
-    
+
     if context:
         # Viewport rendering
         if context.region_data.view_perspective == "CAMERA":
             # Camera view
             offset_x, offset_y = context.region_data.view_camera_offset
-            
+
             if scene.camera and scene.camera.data.type == "ORTHO":                    
                 scale = 0.5 * scene.camera.data.ortho_scale
-                
+
             if render.use_border:
                 offset_x = 0
                 offset_y = 0
-                zoom = 1
                 aspectratio, xaspect, yaspect = calc_aspect(render.resolution_x * render.pixel_aspect_x,
                                                             render.resolution_y * render.pixel_aspect_y,
                                                             scene.camera.data.sensor_fit)
-                    
-                if scene.camera and scene.camera.data.type == "ORTHO":
-                    # zoom = scale * world_scale
-                    zoom = scale
-                    
+
+                zoom = scale if scene.camera and scene.camera.data.type == "ORTHO" else 1
             else:
                 # No border
                 aspectratio, xaspect, yaspect = calc_aspect(width_raw, height_raw, scene.camera.data.sensor_fit)
-                
+
         else:
             # Normal viewport
             aspectratio, xaspect, yaspect = calc_aspect(width_raw, height_raw)
@@ -289,7 +273,7 @@ def calc_screenwindow(zoom, shift_x, shift_y, scene, context=None):
         aspectratio, xaspect, yaspect = calc_aspect(render.resolution_x * render.pixel_aspect_x,
                                                     render.resolution_y * render.pixel_aspect_y,
                                                     scene.camera.data.sensor_fit)
-        
+
         if scene.camera and scene.camera.data.type == "ORTHO":                    
             scale = 0.5 * scene.camera.data.ortho_scale                
 
@@ -302,14 +286,14 @@ def calc_screenwindow(zoom, shift_x, shift_y, scene, context=None):
         -yaspect*zoom + dy,
          yaspect*zoom + dy
     ]
-    
+
     screenwindow = [
         screenwindow[0] * (1 - border_min_x) + screenwindow[1] * border_min_x,
         screenwindow[0] * (1 - border_max_x) + screenwindow[1] * border_max_x,
         screenwindow[2] * (1 - border_min_y) + screenwindow[3] * border_min_y,
         screenwindow[2] * (1 - border_max_y) + screenwindow[3] * border_max_y
     ]
-    
+
     return screenwindow
 
 
@@ -333,17 +317,11 @@ def calc_aspect(width, height, fit="AUTO"):
 
 
 def find_active_uv(uv_layers):
-    for uv in uv_layers:
-        if uv.active_render:
-            return uv
-    return None
+    return next((uv for uv in uv_layers if uv.active_render), None)
 
 
 def find_active_vertex_color_layer(vertex_colors):
-    for layer in vertex_colors:
-        if layer.active_render:
-            return layer
-    return None
+    return next((layer for layer in vertex_colors if layer.active_render), None)
 
 
 def is_instance_visible(dg_obj_instance, obj, context):
@@ -368,11 +346,10 @@ def is_obj_visible(obj):
 
 
 def is_obj_visible_in_cycles(obj):
-    if bpy.app.version[:2] < (3, 0):
-        c_vis = obj.cycles_visibility
-        return any((c_vis.camera, c_vis.diffuse, c_vis.glossy, c_vis.transmission, c_vis.scatter, c_vis.shadow))
-    else:
+    if bpy.app.version[:2] >= (3, 0):
         return any((obj.visible_camera, obj.visible_diffuse, obj.visible_glossy, obj.visible_transmission, obj.visible_volume_scatter, obj.visible_shadow))
+    c_vis = obj.cycles_visibility
+    return any((c_vis.camera, c_vis.diffuse, c_vis.glossy, c_vis.transmission, c_vis.scatter, c_vis.shadow))
 
 
 
@@ -397,13 +374,13 @@ def get_abspath(path, library=None, must_exist=False, must_be_existing_file=Fals
     abspath = bpy.path.abspath(path, library=library)
 
     if must_be_existing_file and not os.path.isfile(abspath):
-        raise OSError('Not an existing file: "%s"' % abspath)
+        raise OSError(f'Not an existing file: "{abspath}"')
 
     if must_be_existing_dir and not os.path.isdir(abspath):
-        raise OSError('Not an existing directory: "%s"' % abspath)
+        raise OSError(f'Not an existing directory: "{abspath}"')
 
     if must_exist and not os.path.exists(abspath):
-        raise OSError('Path does not exist: "%s"' % abspath)
+        raise OSError(f'Path does not exist: "{abspath}"')
 
     return abspath
 
@@ -442,7 +419,7 @@ def use_obj_motion_blur(obj, scene):
 
 
 def has_deforming_modifiers(obj):
-    return any([mod.type not in NON_DEFORMING_MODIFIERS for mod in obj.modifiers])
+    return any(mod.type not in NON_DEFORMING_MODIFIERS for mod in obj.modifiers)
 
 
 def can_share_mesh(obj):
@@ -456,26 +433,16 @@ def use_instancing(obj, scene, is_viewport_render):
         # Always instance in viewport so we can move the object/light around
         return True
 
-    if use_obj_motion_blur(obj, scene):
-        # When using object motion blur, we export all objects as instances
-        return True
-
-    # Alt+D copies without deforming modifiers
-    if can_share_mesh(obj):
-        return True
-
-    return False
+    return True if use_obj_motion_blur(obj, scene) else bool(can_share_mesh(obj))
 
 
 def find_smoke_domain_modifier(obj):
-    if bpy.app.version[:2] < (2, 82):
-        for mod in obj.modifiers:
+    for mod in obj.modifiers:
+        if bpy.app.version[:2] < (2, 82):
             if mod.type == "SMOKE" and mod.smoke_type == "DOMAIN":
                 return mod
-    else:
-        for mod in obj.modifiers:
-            if mod.type == "FLUID" and mod.fluid_type == "DOMAIN":
-                return mod
+        elif mod.type == "FLUID" and mod.fluid_type == "DOMAIN":
+            return mod
 
     return None
 
@@ -488,7 +455,7 @@ def get_name_with_lib(datablock):
     text = datablock.name
     if datablock.library:
         # text += ' (Lib: "%s")' % datablock.library.name
-        text = "L " + text
+        text = f"L {text}"
     return text
 
 
@@ -524,9 +491,9 @@ def using_photongi_debug_mode(is_viewport_render, scene):
 
 
 def is_pixel_filtering_forced_disabled(scene, denoiser_enabled):
-    config = scene.luxcore.config
-
     if denoiser_enabled:
+        config = scene.luxcore.config
+
         # Bidir renders are not properly denoised with pixel filtering
         if config.engine == "BIDIR":
             return True
@@ -622,7 +589,7 @@ def openVDB_sequence_resolve_all(file):
         matchObj = re.match(matchstr, filename_noext)
 
     if matchObj:
-        name = matchObj.group(1)
+        name = matchObj[1]
     else:
         # Input isn't from a sequence
         return []
@@ -632,8 +599,8 @@ def openVDB_sequence_resolve_all(file):
         filename_noext2, ext2 = os.path.splitext(f.name)
         if ext == ext2:
             matchObj = re.match(matchstr, filename_noext2)
-            if matchObj and name == matchObj.group(1):
-                elem = (int(matchObj.group(2)), f.path)
+            if matchObj and name == matchObj[1]:
+                elem = int(matchObj[2]), f.path
                 indexed_filepaths.append(elem)
 
     return sorted(indexed_filepaths, key=lambda elem: elem[0])
@@ -654,17 +621,15 @@ def get_persistent_cache_file_path(file_path, save_or_overwrite, is_viewport_ren
     if not os.path.isfile(file_path_abs) and not save_or_overwrite:
         # Do not save the cache file
         return ""
-    else:
-        if using_filesaver(is_viewport_render, scene) and file_path.startswith("//"):
-            # It is a relative path and we are using filesaver - don't make it
-            # an absolute path, just strip the leading "//"
-            return file_path[2:]
-        else:
-            if os.path.isfile(file_path) and save_or_overwrite:
-                # To overwrite the file, we first have to delete it, otherwise
-                # LuxCore loads the cache from this file
-                os.remove(file_path)
-            return file_path_abs
+    if using_filesaver(is_viewport_render, scene) and file_path.startswith("//"):
+        # It is a relative path and we are using filesaver - don't make it
+        # an absolute path, just strip the leading "//"
+        return file_path[2:]
+    if os.path.isfile(file_path) and save_or_overwrite:
+        # To overwrite the file, we first have to delete it, otherwise
+        # LuxCore loads the cache from this file
+        os.remove(file_path)
+    return file_path_abs
 
 
 def in_material_shading_mode(context):

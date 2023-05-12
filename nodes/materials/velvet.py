@@ -41,11 +41,11 @@ class LuxCoreNodeMatVelvet(LuxCoreNodeMaterial, bpy.types.Node):
         }
 
         if self.advanced:
-            definitions.update({
+            definitions |= {
                 "p1": self.inputs["p1"].export(exporter, depsgraph, props),
                 "p2": self.inputs["p2"].export(exporter, depsgraph, props),
                 "p3": self.inputs["p3"].export(exporter, depsgraph, props),
-            })
+            }
 
         self.export_common_inputs(exporter, depsgraph, props, definitions)
         return self.create_props(props, definitions, luxcore_name)

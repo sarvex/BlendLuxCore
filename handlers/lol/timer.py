@@ -37,13 +37,13 @@ def timer_update():
 
         asset_type = tcom.passargs['asset type']
 
-        if asset_type == 'MODEL':
+        if asset_type == 'MATERIAL':
+            assets = bpy.context.scene.luxcoreOL.material['assets']
+
+        elif asset_type == 'MODEL':
             assets = bpy.context.scene.luxcoreOL.model['assets']
         elif asset_type == 'SCENE':
             assets = bpy.context.scene.luxcoreOL.scene['assets']
-        elif asset_type == 'MATERIAL':
-            assets = bpy.context.scene.luxcoreOL.material['assets']
-
         if tcom.finished:
             thread.stop()
             for a in assets:
@@ -63,12 +63,11 @@ def timer_update():
                     area.tag_redraw()
 
                 return None
-        else:
-            if thread.is_alive():
-                running = running + 1
-            elif running < 10:
-                running = running + 1
-                thread.start()
+        elif thread.is_alive():
+            running = running + 1
+        elif running < 10:
+            running = running + 1
+            thread.start()
 
         for a in assets:
             if a['hash'] == asset['hash']:

@@ -109,8 +109,7 @@ class FrameBuffer(object):
     def needs_replacement(self, context, scene):
         if (self._width, self._height) != utils.calc_filmsize(scene, context):
             return True
-        valid_cam = utils.is_valid_camera(scene.camera)
-        if valid_cam:
+        if valid_cam := utils.is_valid_camera(scene.camera):
             if self._transparent != scene.camera.data.luxcore.imagepipeline.transparent_film:
                 return True
         elif self._transparent:
@@ -121,12 +120,10 @@ class FrameBuffer(object):
             return True
         if (self._offset_x, self._offset_y) != self._calc_offset(context, scene, new_border):
             return True
-        if self._pixel_size != int(scene.luxcore.viewport.pixel_size):
-            return True
-        return False
+        return self._pixel_size != int(scene.luxcore.viewport.pixel_size)
 
     def _make_denoiser_filepath(self, name):
-        return os.path.join(tempfile.gettempdir(), str(id(self)) + "_" + name + ".pfm")
+        return os.path.join(tempfile.gettempdir(), f"{id(self)}_{name}.pfm")
 
     def _save_denoiser_AOV(self, luxcore_session, film_output_type, path):
         # Bufferdepth always 3 because denoiser can't handle alpha anyway (maybe copy over alpha channel in the future)
@@ -197,11 +194,7 @@ class FrameBuffer(object):
         luxcore_session.GetFilm().GetOutputFloat(self._output_type, self.buffer)
 
     def draw(self, engine, context, scene):
-        if self._transparent:
-            format = 'RGBA16F'
-        else:
-            format = 'RGB16F'
-
+        format = 'RGBA16F' if self._transparent else 'RGB16F'
         image = gpu.types.GPUTexture(size=(self._width, self._height), layers=0, is_cubemap=False, format=format,
                                      data=self.buffer)
         self.shader.uniform_sampler("image", image)

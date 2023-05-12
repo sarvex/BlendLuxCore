@@ -19,9 +19,7 @@ def convert(context, engine, scene, depsgraph, exported_objects):
 
     # Find and delete entries of non-moving objects (where all matrices are equal)
     for prefix, matrix_steps in list(matrices.items()):
-        matrices_equal = utils.all_elems_equal(matrix_steps)
-
-        if matrices_equal:
+        if matrices_equal := utils.all_elems_equal(matrix_steps):
             # This object does not need motion blur because it does not move
             del matrices[prefix]
 
@@ -89,12 +87,12 @@ def _append_object_matrices(depsgraph, exported_objects, matrices, step):
             exported_thing = exported_objects[obj_key]
             if isinstance(exported_thing, ExportedObject):
                 for part in exported_thing.parts:
-                    prefix = "scene.objects." + part.lux_obj + "."
+                    prefix = f"scene.objects.{part.lux_obj}."
                     _append_matrix(matrices, prefix, matrix, step)
-            # else:
-            #     assert isinstance(exported_thing, ExportedLight)
-            #     prefix = "scene.lights." + exported_thing.lux_light_name + "."
-            #     _append_matrix(matrices, prefix, matrix, step)
+                    # else:
+                    #     assert isinstance(exported_thing, ExportedLight)
+                    #     prefix = "scene.lights." + exported_thing.lux_light_name + "."
+                    #     _append_matrix(matrices, prefix, matrix, step)
         except KeyError:
             # This is not a problem, objects are skipped during export for various reasons
             # E.g. if the object is not visible, or if it's a camera

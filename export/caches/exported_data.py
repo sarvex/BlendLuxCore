@@ -34,14 +34,16 @@ class ExportedObject(ExportedData):
         definitions = {}
 
         for part in self.parts:
-            definitions[part.lux_obj + ".shape"] = part.lux_shape
-            definitions[part.lux_obj + ".material"] = part.lux_mat
-            definitions[part.lux_obj + ".camerainvisible"] = not self.visible_to_camera
+            definitions[f"{part.lux_obj}.shape"] = part.lux_shape
+            definitions[f"{part.lux_obj}.material"] = part.lux_mat
+            definitions[f"{part.lux_obj}.camerainvisible"] = not self.visible_to_camera
             if self.obj_id != -1:
-                definitions[part.lux_obj + ".id"] = self.obj_id
+                definitions[f"{part.lux_obj}.id"] = self.obj_id
 
             if self.transform:
-                definitions[part.lux_obj + ".transformation"] = utils.matrix_to_list(self.transform)
+                definitions[
+                    f"{part.lux_obj}.transformation"
+                ] = utils.matrix_to_list(self.transform)
 
         return utils.create_props(prefix, definitions)
 

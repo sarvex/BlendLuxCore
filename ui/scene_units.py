@@ -13,9 +13,9 @@ class LUXCORE_PT_unit_advanced(SceneButtonsPanel, Panel):
         return context.scene.render.engine == "LUXCORE"
 
     def draw_header(self, context):
-        layout = self.layout
         config = context.scene.luxcore.config
         if config.min_epsilon >= config.max_epsilon:
+            layout = self.layout
             layout.label(text="", icon=icons.WARNING)
 
     def draw(self, context):

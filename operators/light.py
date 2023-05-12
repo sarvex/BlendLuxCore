@@ -19,9 +19,7 @@ class LUXCORE_OT_light_new_volume_node_tree(bpy.types.Operator):
         return poll_light(context)
 
     def execute(self, context):
-        name = ""
-        if context.light:
-            name = context.light.name
+        name = context.light.name if context.light else ""
         name += "_Volume"
 
         node_tree = bpy.data.node_groups.new(name=name, type="luxcore_volume_nodes")

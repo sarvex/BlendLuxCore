@@ -115,22 +115,22 @@ def view_update(engine, context, depsgraph, changes=None):
 
 def view_draw(engine, context, depsgraph):
     scene = depsgraph.scene_eval
-    
+
     if engine.starting_session:
         engine.tag_redraw()
         return
-        
+
     if engine.viewport_fatal_error:
         engine.update_stats("Error:", engine.viewport_fatal_error)
         engine.tag_redraw()
         return
-    
+
     if engine.session is None:
         config = scene.luxcore.config
         definitions = {}
         luxcore_engine, _ = convert_viewport_engine(context, scene, definitions, config)
         message = ""
-        
+
         if luxcore_engine.endswith("OCL"):
             # Create dummy renderconfig to check if we have to compile OpenCL kernels
             luxcore_scene = pyluxcore.Scene()
@@ -138,7 +138,7 @@ def view_draw(engine, context, depsgraph):
                 "scene.camera.type": "perspective",
             }
             luxcore_scene.Parse(utils.create_props("", definitions))
-            
+
             devices = scene.luxcore.devices
             definitions = {
                 "renderengine.type": "RTPATHOCL",
@@ -149,11 +149,11 @@ def view_draw(engine, context, depsgraph):
             }
             config_props = utils.create_props("", definitions)
             renderconfig = pyluxcore.RenderConfig(config_props, luxcore_scene)
-            
+
             if not renderconfig.HasCachedKernels():
                 gpu_backend = utils.get_addon_preferences(context).gpu_backend
                 message = f"Compiling {gpu_backend} kernels (just once, usually takes 15-30 minutes)"
-        
+
         engine.update_stats("Starting viewport render", message)
         engine.viewport_starting_message_shown = True
         engine.tag_update()
@@ -214,20 +214,19 @@ def view_draw(engine, context, depsgraph):
 
         if framebuffer.denoiser_result_cached:
             status_message = "(Paused, Denoiser Done)"
-        else:
-            if framebuffer.is_denoiser_active():
-                if framebuffer.is_denoiser_done():
-                    status_message = "(Paused, Denoiser Done)"
-                    framebuffer.load_denoiser_result(scene)
-                else:
-                    status_message = "(Paused, Denoiser Working ...)"
-                    engine.tag_redraw()
-            elif context.scene.luxcore.viewport.get_denoiser(context) == "OIDN":
-                try:
-                    framebuffer.start_denoiser(engine.session)
-                    engine.tag_redraw()
-                except Exception as error:
-                    status_message = "Could not start denoiser: %s" % error
+        elif framebuffer.is_denoiser_active():
+            if framebuffer.is_denoiser_done():
+                status_message = "(Paused, Denoiser Done)"
+                framebuffer.load_denoiser_result(scene)
+            else:
+                status_message = "(Paused, Denoiser Working ...)"
+                engine.tag_redraw()
+        elif context.scene.luxcore.viewport.get_denoiser(context) == "OIDN":
+            try:
+                framebuffer.start_denoiser(engine.session)
+                engine.tag_redraw()
+            except Exception as error:
+                status_message = f"Could not start denoiser: {error}"
     else:
         # Not in pause yet, keep drawing
         engine.session.WaitNewFrame()

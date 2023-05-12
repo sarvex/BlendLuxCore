@@ -35,19 +35,22 @@ class LuxCoreNodeSocket:
 
     @classmethod
     def is_allowed_input(cls, socket):
-        for allowed_class in cls.allowed_inputs:
-            if isinstance(socket, allowed_class):
-                return True
-        return False
+        return any(
+            isinstance(socket, allowed_class)
+            for allowed_class in cls.allowed_inputs
+        )
 
     def draw(self, context, layout, node, text):
         # Check if the socket linked to this socket is in the set of allowed input socket classes.
         link = utils_node.get_link(self)
 
-        if link and hasattr(self, "allowed_inputs"):
-            if not self.is_allowed_input(link.from_socket):
-                layout.label(text="Wrong Input!", icon=icons.ERROR)
-                return
+        if (
+            link
+            and hasattr(self, "allowed_inputs")
+            and not self.is_allowed_input(link.from_socket)
+        ):
+            layout.label(text="Wrong Input!", icon=icons.ERROR)
+            return
 
         has_default = hasattr(self, "default_value") and self.default_value is not None
 
@@ -82,9 +85,7 @@ class LuxCoreNodeSocket:
         return None
 
     def export(self, exporter, depsgraph, props, luxcore_name=None):
-        link = utils_node.get_link(self)
-
-        if link:
+        if link := utils_node.get_link(self):
             return link.from_node.export(exporter, depsgraph, props, luxcore_name, link.from_socket)
         elif hasattr(self, "default_value"):
             return self.export_default()
@@ -237,7 +238,7 @@ class LuxCoreSocketVector(bpy.types.NodeSocket, LuxCoreNodeSocket):
             col.label(text="")
         else:
             # Show the value of the vector even in collapsed form
-            text += " (%s)" % (", ".join(str(round(x, 2)) for x in self.default_value))
+            text += f' ({", ".join(str(round(x, 2)) for x in self.default_value)})'
         col.label(text=text)
 
     def export_default(self):
@@ -345,12 +346,10 @@ class LuxCoreSocketShape(bpy.types.NodeSocket, LuxCoreNodeSocket):
     default_value = "[Base Mesh]"
 
     def draw_prop(self, context, layout, node, text):
-        layout.label(text=text + " [Using Base Mesh]")
+        layout.label(text=f"{text} [Using Base Mesh]")
 
     def export_shape(self, exporter, depsgraph, props, base_shape_name):
-        link = utils_node.get_link(self)
-
-        if link:
+        if link := utils_node.get_link(self):
             try:
                 return link.from_node.export_shape(exporter, depsgraph, props, base_shape_name)
             except Exception as error:

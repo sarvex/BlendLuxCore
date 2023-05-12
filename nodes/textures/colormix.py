@@ -27,11 +27,8 @@ class LuxCoreNodeTexColorMix(LuxCoreNodeTexture, bpy.types.Node):
         else:
             self.inputs[1].name = "Color 1"
             self.inputs["Color 2"].enabled = True
-        
-        if self.mode == "mix":
-            self.inputs["Fac"].enabled = True
-        else:
-            self.inputs["Fac"].enabled = False
+
+        self.inputs["Fac"].enabled = self.mode == "mix"
         utils_node.force_viewport_update(self, context)
 
     mode: EnumProperty(name="Mode", items=mode_items, default="mix", update=change_mode)
@@ -70,7 +67,7 @@ class LuxCoreNodeTexColorMix(LuxCoreNodeTexture, bpy.types.Node):
         definitions = {
             "type": self.mode,
         }
-        
+
         if self.mode == "abs":
             definitions["texture"] = self.inputs["Color"].export(exporter, depsgraph, props)
         elif self.mode == "clamp":
@@ -86,19 +83,18 @@ class LuxCoreNodeTexColorMix(LuxCoreNodeTexture, bpy.types.Node):
 
         luxcore_name = self.create_props(props, definitions, luxcore_name)
 
-        if self.clamp_output and self.mode != "clamp":
-            # Implicitly create a clamp texture with unique name
-            tex_name = luxcore_name + "_clamp"
-            helper_prefix = "scene.textures." + tex_name + "."
-            helper_defs = {
-                "type": "clamp",
-                "texture": luxcore_name,
-                "min": 0,
-                "max": 1,
-            }
-            props.Set(utils.create_props(helper_prefix, helper_defs))
-
-            # The helper texture gets linked in front of this node
-            return tex_name
-        else:
+        if not self.clamp_output or self.mode == "clamp":
             return luxcore_name
+            # Implicitly create a clamp texture with unique name
+        tex_name = f"{luxcore_name}_clamp"
+        helper_prefix = f"scene.textures.{tex_name}."
+        helper_defs = {
+            "type": "clamp",
+            "texture": luxcore_name,
+            "min": 0,
+            "max": 1,
+        }
+        props.Set(utils.create_props(helper_prefix, helper_defs))
+
+        # The helper texture gets linked in front of this node
+        return tex_name

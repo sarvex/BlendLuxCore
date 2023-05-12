@@ -26,12 +26,8 @@ class LuxCoreNodeTexVectorMath(LuxCoreNodeTexture, bpy.types.Node):
         else:
             self.inputs[1].name = "Vector 1"
             self.inputs["Vector 2"].enabled = True
-        
-        if self.mode == "mix":
-            self.inputs["Fac"].enabled = True
-        else:
-            self.inputs["Fac"].enabled = False
 
+        self.inputs["Fac"].enabled = self.mode == "mix"
         utils_node.force_viewport_update(self, context)
 
     mode: EnumProperty(name="Mode", items=mode_items, default="scale", update=change_mode)

@@ -24,7 +24,7 @@ def render(engine, depsgraph):
     _check_halt_conditions(engine, scene)
 
     for layer_index, layer in enumerate(scene.view_layers):
-        print('[Engine/Final] Rendering layer "%s"' % layer.name)
+        print(f'[Engine/Final] Rendering layer "{layer.name}"')
 
         dummy_result = engine.begin_result(0, 0, 1, 1, layer=layer.name)
 
@@ -47,7 +47,7 @@ def render(engine, depsgraph):
             # Blender skips the rest of the render layers anyway
             return
 
-        print('[Engine/Final] Finished rendering layer "%s"' % layer.name)
+        print(f'[Engine/Final] Finished rendering layer "{layer.name}"')
     
 
 def _render_layer(engine, depsgraph, statistics, view_layer):
@@ -79,7 +79,7 @@ def _render_layer(engine, depsgraph, statistics, view_layer):
             output_path = config.GetProperties().Get("filesaver.filename").GetString()
         else:
             output_path = config.GetProperties().Get("filesaver.directory").GetString()
-        engine.report({"INFO"}, 'Exported to "%s"' % output_path)
+        engine.report({"INFO"}, f'Exported to "{output_path}"')
 
         # Clean up
         del engine.session
@@ -114,9 +114,8 @@ def _render_layer(engine, depsgraph, statistics, view_layer):
                 utils_render.update_status_msg(stats, engine, depsgraph.scene, config, time_until_film_refresh=0)
                 engine.framebuffer.draw(engine, engine.session, depsgraph.scene, render_stopped=False)
                 engine.update_stats("", "Paused")
-        else:
-            if engine.session.IsInPause():
-                engine.session.Resume()
+        elif engine.session.IsInPause():
+            engine.session.Resume()
 
         # Do session update (imagepipeline, lightgroups)
         changes = engine.exporter.get_changes(depsgraph)
@@ -197,10 +196,7 @@ def _stat_refresh_interval(start, scene):
     maximum = 16
 
     minutes = (time() - start) / 60
-    if minutes < 4:
-        return max(2**minutes, minimum)
-    else:
-        return maximum
+    return max(2**minutes, minimum) if minutes < 4 else maximum
 
 
 def _check_halt_conditions(engine, scene):
@@ -219,7 +215,9 @@ def _check_halt_conditions(engine, scene):
                 is_halt_enabled &= has_halt_condition
 
                 if not has_halt_condition:
-                    LuxCoreErrorLog.add_error('Halt condition missing for render layer "%s"' % layer.name)
+                    LuxCoreErrorLog.add_error(
+                        f'Halt condition missing for render layer "{layer.name}"'
+                    )
             else:
                 is_halt_enabled = False
 

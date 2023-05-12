@@ -24,7 +24,7 @@ def convert_light(exporter, obj, obj_key, depsgraph, luxcore_scene, transform, i
         # If this light was previously defined as a light, delete it
         luxcore_scene.DeleteLight(luxcore_name)
 
-        prefix = "scene.lights." + luxcore_name + "."
+        prefix = f"scene.lights.{luxcore_name}."
 
         if obj.data.luxcore.use_cycles_settings:
             return _convert_cycles_light(exporter, obj, depsgraph, luxcore_scene, transform, is_viewport_render,
@@ -33,7 +33,7 @@ def convert_light(exporter, obj, obj_key, depsgraph, luxcore_scene, transform, i
             return _convert_luxcore_light(exporter, obj, depsgraph, luxcore_scene, transform, is_viewport_render,
                                           luxcore_name, scene, prefix)
     except Exception as error:
-        msg = 'Light "%s": %s' % (obj.name, error)
+        msg = f'Light "{obj.name}": {error}'
         LuxCoreErrorLog.add_warning(msg, obj_name=obj.name)
         import traceback
         traceback.print_exc()
@@ -49,11 +49,10 @@ def _convert_cycles_light(exporter, obj, depsgraph, luxcore_scene, transform, is
     gain = light.energy
 
     if light.use_nodes and light.node_tree:
-        # Modify color and gain according to node setup
-        output_node = light.node_tree.get_output_node("CYCLES")
-        if output_node:
-            surface_node = utils_node.get_linked_node(output_node.inputs["Surface"])
-            if surface_node:
+        if output_node := light.node_tree.get_output_node("CYCLES"):
+            if surface_node := utils_node.get_linked_node(
+                output_node.inputs["Surface"]
+            ):
                 node_gain = 1
                 node_color = [1, 1, 1]
 
@@ -64,17 +63,21 @@ def _convert_cycles_light(exporter, obj, depsgraph, luxcore_scene, transform, is
                         LuxCoreErrorLog.add_warning("Light strength nodes not supported", obj.name)
 
                     color_socket = surface_node.inputs["Color"]
-                    color_node = utils_node.get_linked_node(color_socket)
-
-                    if color_node:
+                    if color_node := utils_node.get_linked_node(color_socket):
                         if color_node.bl_idname == "ShaderNodeRGB":
                             node_color = list(color_node.outputs[0].default_value)[:3]
                         else:
-                            LuxCoreErrorLog.add_warning("Unsupported color node type: " + color_node.bl_idname, obj.name)
+                            LuxCoreErrorLog.add_warning(
+                                f"Unsupported color node type: {color_node.bl_idname}",
+                                obj.name,
+                            )
                     else:
-                         node_color = list(color_socket.default_value)[:3]
+                        node_color = list(color_socket.default_value)[:3]
                 else:
-                    LuxCoreErrorLog.add_warning("Unsupported surface node type: " + surface_node.bl_idname, obj.name)
+                    LuxCoreErrorLog.add_warning(
+                        f"Unsupported surface node type: {surface_node.bl_idname}",
+                        obj.name,
+                    )
 
                 gain *= node_gain
                 color = [a * b for a, b in zip(color, node_color)]
@@ -121,7 +124,10 @@ def _convert_cycles_light(exporter, obj, depsgraph, luxcore_scene, transform, is
             return pyluxcore.Properties(), None
 
         if light.shape not in {"SQUARE", "RECTANGLE"}:
-            LuxCoreErrorLog.add_warning("Unsupported area light shape: " + light.shape.title(), obj.name)
+            LuxCoreErrorLog.add_warning(
+                f"Unsupported area light shape: {light.shape.title()}",
+                obj.name,
+            )
 
         props = pyluxcore.Properties()
 
@@ -134,8 +140,8 @@ def _convert_cycles_light(exporter, obj, depsgraph, luxcore_scene, transform, is
         area_gain *= 0.06504
 
         # Material
-        mat_name = luxcore_name + "_AREA_LIGHT_MAT"
-        mat_prefix = "scene.materials." + mat_name + "."
+        mat_name = f"{luxcore_name}_AREA_LIGHT_MAT"
+        mat_prefix = f"scene.materials.{mat_name}."
         mat_definitions = {
             "type": "matte",
             # Black base material to avoid any bounce light from the mesh
@@ -161,7 +167,7 @@ def _convert_cycles_light(exporter, obj, depsgraph, luxcore_scene, transform, is
         return props, exported_obj
     else:
         # Can only happen if Blender changes its light types
-        raise Exception("Unkown light type", light.type, 'in light "%s"' % obj.name)
+        raise Exception("Unkown light type", light.type, f'in light "{obj.name}"')
 
     definitions["gain"] = [gain] * 3
     definitions["color"] = color
@@ -179,14 +185,13 @@ def _convert_cycles_light(exporter, obj, depsgraph, luxcore_scene, transform, is
 
 def _convert_luxcore_light(exporter, obj, depsgraph, luxcore_scene, transform, is_viewport_render,
                            luxcore_name, scene, prefix):
-    definitions = {}
     light = obj.data
     sun_dir = _calc_sun_dir(transform)
 
     # Common light settings shared by all light types
     # Note: these variables are also passed to the area light export function
     gain, importance, lightgroup_id = _convert_common_props(exporter, scene, light)
-    definitions["gain"] = apply_exposure(gain, light.luxcore.exposure)
+    definitions = {"gain": apply_exposure(gain, light.luxcore.exposure)}
     definitions["importance"] = importance
     definitions["id"] = lightgroup_id
 
@@ -205,7 +210,7 @@ def _convert_luxcore_light(exporter, obj, depsgraph, luxcore_scene, transform, i
                     definitions["gamma"] = light.luxcore.gamma
                     has_image = True
                 except OSError as error:
-                    msg = 'Light "%s": %s' % (obj.name, error)
+                    msg = f'Light "{obj.name}": {error}'
                     LuxCoreErrorLog.add_warning(msg, obj_name=obj.name)
                     # Fallback
                     definitions["type"] = "point" if light.shadow_soft_size == 0 else "sphere"
@@ -217,7 +222,7 @@ def _convert_luxcore_light(exporter, obj, depsgraph, luxcore_scene, transform, i
             try:
                 has_ies = export_ies(definitions, light.luxcore.ies, light.library)
             except OSError as error:
-                msg = 'Light "%s": %s' % (obj.name, error)
+                msg = f'Light "{obj.name}": {error}'
                 LuxCoreErrorLog.add_warning(msg, obj_name=obj.name)
             finally:
                 if not has_ies and not has_image:
@@ -287,7 +292,7 @@ def _convert_luxcore_light(exporter, obj, depsgraph, luxcore_scene, transform, i
                 definitions["fov"] = coneangle * 2
                 definitions["gamma"] = light.luxcore.gamma
             except OSError as error:
-                msg = 'Light "%s": %s' % (obj.name, error)
+                msg = f'Light "{obj.name}": {error}'
                 LuxCoreErrorLog.add_warning(msg, obj_name=obj.name)
                 # Fallback
                 definitions["type"] = "spot"
@@ -310,27 +315,26 @@ def _convert_luxcore_light(exporter, obj, depsgraph, luxcore_scene, transform, i
         definitions["transformation"] = utils.matrix_to_list(transform @ spot_fix)
 
     elif light.type == "AREA":
-        if light.luxcore.is_laser:
-            # laser
-            definitions["type"] = "laser"
-            definitions["radius"] = light.size / 2
-
-            _define_brightness_and_color(light, definitions)
-
-            # Position and direction are set by transformation property
-            definitions["position"] = [0, 0, 0]
-            definitions["target"] = [0, 0, -1]
-
-            spot_fix = Matrix.Rotation(math.radians(-90.0), 4, "Z")
-            definitions["transformation"] = utils.matrix_to_list(transform @ spot_fix)
-        else:
+        if not light.luxcore.is_laser:
             # area (mesh light)
             return _convert_area_light(obj, scene, is_viewport_render, exporter, depsgraph, luxcore_scene, gain,
                                        importance, luxcore_name, transform)
 
+        # laser
+        definitions["type"] = "laser"
+        definitions["radius"] = light.size / 2
+
+        _define_brightness_and_color(light, definitions)
+
+        # Position and direction are set by transformation property
+        definitions["position"] = [0, 0, 0]
+        definitions["target"] = [0, 0, -1]
+
+        spot_fix = Matrix.Rotation(math.radians(-90.0), 4, "Z")
+        definitions["transformation"] = utils.matrix_to_list(transform @ spot_fix)
     else:
         # Can only happen if Blender changes its light types
-        raise Exception("Unkown light type", light.type, 'in light "%s"' % obj.name)
+        raise Exception("Unkown light type", light.type, f'in light "{obj.name}"')
 
     _indirect_light_visibility(definitions, light)
 
@@ -339,16 +343,13 @@ def _convert_luxcore_light(exporter, obj, depsgraph, luxcore_scene, transform, i
 
     props = utils.create_props(prefix, definitions)
 
-    # Exterior volume of the light
-    volume_node_tree = light.luxcore.volume
-
-    if volume_node_tree:
+    if volume_node_tree := light.luxcore.volume:
         luxcore_name = utils.get_luxcore_name(volume_node_tree)
         active_output = get_active_output(volume_node_tree)
 
         try:
             active_output.export(exporter, depsgraph, props, luxcore_name)
-            props.Set(pyluxcore.Property(prefix + "volume", luxcore_name))
+            props.Set(pyluxcore.Property(f"{prefix}volume", luxcore_name))
         except Exception as error:
             msg = f'Light "{obj.name}": {error}'
             LuxCoreErrorLog.add_warning(msg, obj_name=obj.name)
@@ -360,19 +361,16 @@ def convert_world(exporter, world, scene, is_viewport_render):
     try:
         assert isinstance(world, bpy.types.World)
         luxcore_name = WORLD_BACKGROUND_LIGHT_NAME
-        prefix = "scene.lights." + luxcore_name + "."
+        prefix = f"scene.lights.{luxcore_name}."
 
         if world.luxcore.use_cycles_settings:
             definitions = _convert_cycles_world(exporter, scene, world, is_viewport_render)
         else:
             definitions = _convert_luxcore_world(exporter, scene, world, is_viewport_render)
 
-        if definitions:
-            return utils.create_props(prefix, definitions)
-        else:
-            return None
+        return utils.create_props(prefix, definitions) if definitions else None
     except Exception as error:
-        msg = 'World "%s": %s' % (world.name, error)
+        msg = f'World "{world.name}": {error}'
         LuxCoreErrorLog.add_warning(msg)
         import traceback
         traceback.print_exc()

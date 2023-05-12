@@ -12,11 +12,10 @@ def calc_samples_per_pass(config):
     elif config.get_sampler() in {"SOBOL", "RANDOM"}:
         if config.using_out_of_core():
             return int(config.out_of_core_supersampling) * SamplingOverlap.OUT_OF_CORE
-        else:
-            if config.sampler_pattern == "PROGRESSIVE":
-                return SamplingOverlap.PROGRESSIVE
-            elif config.sampler_pattern == "CACHE_FRIENDLY":
-                return SamplingOverlap.CACHE_FRIENDLY
+        if config.sampler_pattern == "CACHE_FRIENDLY":
+            return SamplingOverlap.CACHE_FRIENDLY
+        elif config.sampler_pattern == "PROGRESSIVE":
+            return SamplingOverlap.PROGRESSIVE
     return -1
 
 class LUXCORE_RENDER_PT_sampling(RenderButtonsPanel, Panel):

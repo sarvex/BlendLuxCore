@@ -46,7 +46,7 @@ class LUXCORE_RENDER_PT_error_log(RenderButtonsPanel, Panel):
 
             text = elem.message
             if elem.count > 1:
-                text += str(elem.count) + "x"
+                text += f"{str(elem.count)}x"
 
             row.label(text=elem.message, icon=icon)
             if elem.obj_name:

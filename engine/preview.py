@@ -27,7 +27,7 @@ def no_log_output(message):
 
 
 def render(engine, depsgraph):
-    scene = depsgraph.scene_eval    
+    scene = depsgraph.scene_eval
     width, height = utils.calc_filmsize(scene)
 
     if max(width, height) <= 96:
@@ -39,7 +39,7 @@ def render(engine, depsgraph):
     engine.exporter.scene = scene
     preview_type, active_mat = _get_preview_settings(depsgraph)
 
-    if preview_type == PreviewType.MATERIAL and not active_mat is None:
+    if preview_type == PreviewType.MATERIAL and active_mat is not None:
         engine.session = _export_mat_scene(engine, depsgraph, active_mat)
     else:
         print("Unsupported preview type")
@@ -108,7 +108,7 @@ def _export_mat_scene(engine, depsgraph, active_mat):
     # Objects
     for dg_obj_instance in depsgraph.object_instances:
         obj = dg_obj_instance.object
-        
+
         if not utils.is_instance_visible(dg_obj_instance, obj, None):
             continue
 
@@ -122,14 +122,13 @@ def _export_mat_scene(engine, depsgraph, active_mat):
             obj_key = "Preview_LuxBall_Object"
             mesh_key = "Preview_LuxBall_Mesh"
 
-            mesh_definitions = []
             props = pyluxcore.Properties()
-            filepath = dirname(dirname(realpath(__file__))) + "/preview_scene/LuxCore_preview.ply"
+            filepath = f"{dirname(dirname(realpath(__file__)))}/preview_scene/LuxCore_preview.ply"
 
-            prefix = "scene.shapes." + mesh_key + "."
-            props.Set(pyluxcore.Property(prefix + "type", "mesh"))
-            props.Set(pyluxcore.Property(prefix + "ply", filepath))
-            mesh_definitions.append((mesh_key, 0))
+            prefix = f"scene.shapes.{mesh_key}."
+            props.Set(pyluxcore.Property(f"{prefix}type", "mesh"))
+            props.Set(pyluxcore.Property(f"{prefix}ply", filepath))
+            mesh_definitions = [(mesh_key, 0)]
             scene_props.Set(props)
 
             mat_names = []
@@ -151,13 +150,13 @@ def _export_mat_scene(engine, depsgraph, active_mat):
         else:
             exporter.object_cache2._convert_obj(exporter, dg_obj_instance, obj, depsgraph,
                                                 luxcore_scene, scene_props, False)
-    
+
     # Limit max. subdivision level for previews
     for shape_key in scene_props.GetAllUniqueSubNames("scene.shapes"):
         shape_props = scene_props.GetAllProperties(shape_key)
-        if shape_props.Get(shape_key + ".type", [""]).GetString() == "subdiv":
-            max_level = shape_props.Get(shape_key + ".maxlevel", [0]).GetInt()
-            shape_props.Set(pyluxcore.Property(shape_key + ".maxlevel", min(max_level, 1)))
+        if shape_props.Get(f"{shape_key}.type", [""]).GetString() == "subdiv":
+            max_level = shape_props.Get(f"{shape_key}.maxlevel", [0]).GetInt()
+            shape_props.Set(pyluxcore.Property(f"{shape_key}.maxlevel", min(max_level, 1)))
             scene_props.Set(shape_props)
 
     # Lights (either two area lights or a sun+sky setup)
@@ -172,9 +171,7 @@ def _export_mat_scene(engine, depsgraph, active_mat):
     # Session
     config_props = _create_config(scene)
     renderconfig = pyluxcore.RenderConfig(config_props, luxcore_scene)
-    session = pyluxcore.RenderSession(renderconfig)
-    
-    return session
+    return pyluxcore.RenderSession(renderconfig)
 
 def _create_lights(scene, luxcore_scene, props, is_world_sphere):
     if is_world_sphere:
@@ -211,16 +208,20 @@ def _create_lights(scene, luxcore_scene, props, is_world_sphere):
 
 
 def _create_area_light(scene, luxcore_scene, props, name, color, position, rotation_matrix, scale, visible=True):
-    mat_name = name + "_mat"
-    mesh_name = name + "_mesh"
+    mat_name = f"{name}_mat"
+    mesh_name = f"{name}_mesh"
 
     # Material
-    props.Set(pyluxcore.Property("scene.materials." + mat_name + ".type", ["matte"]))
-    props.Set(pyluxcore.Property("scene.materials." + mat_name + ".kd", [0.0] * 3))
-    props.Set(pyluxcore.Property("scene.materials." + mat_name + ".emission", color))
+    props.Set(pyluxcore.Property(f"scene.materials.{mat_name}.type", ["matte"]))
+    props.Set(pyluxcore.Property(f"scene.materials.{mat_name}.kd", [0.0] * 3))
+    props.Set(pyluxcore.Property(f"scene.materials.{mat_name}.emission", color))
     # assign material to object
-    props.Set(pyluxcore.Property("scene.objects." + name + ".material", [mat_name]))
-    props.Set(pyluxcore.Property("scene.objects." + name + ".camerainvisible", not visible))
+    props.Set(pyluxcore.Property(f"scene.objects.{name}.material", [mat_name]))
+    props.Set(
+        pyluxcore.Property(
+            f"scene.objects.{name}.camerainvisible", not visible
+        )
+    )
 
 
     scale_matrix = Matrix()
@@ -248,7 +249,7 @@ def _create_area_light(scene, luxcore_scene, props, name, color, position, rotat
     ]
     luxcore_scene.DefineMesh(mesh_name, vertices, faces, None, None, None, None, transform)
     # assign mesh to object
-    props.Set(pyluxcore.Property("scene.objects." + name + ".shape", [mesh_name]))
+    props.Set(pyluxcore.Property(f"scene.objects.{name}.shape", [mesh_name]))
     return props
 
 
@@ -298,9 +299,9 @@ def _create_ground(luxcore_scene, props):
 
 
 def _create_checker_plane(luxcore_scene, props, name, vertices, faces):
-    mesh_name = name + "_mesh"
-    mat_name = name + "_mat"
-    tex_name = name + "_tex"
+    mesh_name = f"{name}_mesh"
+    mat_name = f"{name}_mat"
+    tex_name = f"{name}_tex"
 
     # Mesh
     luxcore_scene.DefineMesh(mesh_name, vertices, faces, None, None, None, None)
@@ -311,35 +312,55 @@ def _create_checker_plane(luxcore_scene, props, name, vertices, faces):
                      0, checker_size, 0, 0,
                      0, 0, checker_size, 0,
                      0, 0, 0, 1]
-    props.Set(pyluxcore.Property("scene.textures." + tex_name + ".type", "checkerboard3d"))
-    props.Set(pyluxcore.Property("scene.textures." + tex_name + ".texture1", 0.7))
-    props.Set(pyluxcore.Property("scene.textures." + tex_name + ".texture2", 0.2))
-    props.Set(pyluxcore.Property("scene.textures." + tex_name + ".mapping.type", "globalmapping3d"))
-    props.Set(pyluxcore.Property("scene.textures." + tex_name + ".mapping.transformation", checker_trans))
+    props.Set(
+        pyluxcore.Property(f"scene.textures.{tex_name}.type", "checkerboard3d")
+    )
+    props.Set(pyluxcore.Property(f"scene.textures.{tex_name}.texture1", 0.7))
+    props.Set(pyluxcore.Property(f"scene.textures.{tex_name}.texture2", 0.2))
+    props.Set(
+        pyluxcore.Property(
+            f"scene.textures.{tex_name}.mapping.type", "globalmapping3d"
+        )
+    )
+    props.Set(
+        pyluxcore.Property(
+            f"scene.textures.{tex_name}.mapping.transformation", checker_trans
+        )
+    )
     # Material
-    props.Set(pyluxcore.Property("scene.materials." + mat_name + ".type", "matte"))
-    props.Set(pyluxcore.Property("scene.materials." + mat_name + ".kd", tex_name))
+    props.Set(pyluxcore.Property(f"scene.materials.{mat_name}.type", "matte"))
+    props.Set(pyluxcore.Property(f"scene.materials.{mat_name}.kd", tex_name))
     # Invisible for indirect diffuse rays to eliminate fireflies
-    props.Set(pyluxcore.Property("scene.materials." + mat_name + ".visibility.indirect.diffuse.enable", False))
+    props.Set(
+        pyluxcore.Property(
+            f"scene.materials.{mat_name}.visibility.indirect.diffuse.enable",
+            False,
+        )
+    )
 
     # Object
-    props.Set(pyluxcore.Property("scene.objects." + name + ".shape", mesh_name))
-    props.Set(pyluxcore.Property("scene.objects." + name + ".material", mat_name))
+    props.Set(pyluxcore.Property(f"scene.objects.{name}.shape", mesh_name))
+    props.Set(pyluxcore.Property(f"scene.objects.{name}.material", mat_name))
 
 def _create_walls(luxcore_scene, props, name, vertices, faces):
-    mesh_name = name + "_mesh"
-    mat_name = name + "_mat"
+    mesh_name = f"{name}_mesh"
+    mat_name = f"{name}_mat"
 
     # Mesh
     luxcore_scene.DefineMesh(mesh_name, vertices, faces, None, None, None, None)
     # Material
-    props.Set(pyluxcore.Property("scene.materials." + mat_name + ".type", "matte"))
-    props.Set(pyluxcore.Property("scene.materials." + mat_name + ".kd", 0.7))
+    props.Set(pyluxcore.Property(f"scene.materials.{mat_name}.type", "matte"))
+    props.Set(pyluxcore.Property(f"scene.materials.{mat_name}.kd", 0.7))
     # Invisible for indirect diffuse rays to eliminate fireflies
-    props.Set(pyluxcore.Property("scene.materials." + mat_name + ".visibility.indirect.diffuse.enable", False))
+    props.Set(
+        pyluxcore.Property(
+            f"scene.materials.{mat_name}.visibility.indirect.diffuse.enable",
+            False,
+        )
+    )
     # Object
-    props.Set(pyluxcore.Property("scene.objects." + name + ".shape", mesh_name))
-    props.Set(pyluxcore.Property("scene.objects." + name + ".material", mat_name))
+    props.Set(pyluxcore.Property(f"scene.objects.{name}.shape", mesh_name))
+    props.Set(pyluxcore.Property(f"scene.objects.{name}.material", mat_name))
 
 
 def _create_config(scene):
@@ -388,10 +409,12 @@ def _get_preview_settings(depsgraph):
     # Iterate through the preview scene, finding objects with materials attached
     objects = []
     active_mat = None
-    for dg_obj_instance in depsgraph.object_instances:        
+    for dg_obj_instance in depsgraph.object_instances:    
         obj = dg_obj_instance.instance_object if dg_obj_instance.is_instance else dg_obj_instance.object                
-        
-        if not obj.name == 'preview_hair' and not utils.is_instance_visible(dg_obj_instance, obj, None):
+
+        if obj.name != 'preview_hair' and not utils.is_instance_visible(
+            dg_obj_instance, obj, None
+        ):
             continue        
 
         if obj.name.startswith("preview"):

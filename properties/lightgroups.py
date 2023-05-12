@@ -102,19 +102,20 @@ class LuxCoreLightGroupSettings(PropertyGroup):
         self.custom.remove(index)
 
     def get_id_by_name(self, group_name):
-        # Check if the name is in the custom groups
-        for i, group in enumerate(self.custom):
-            if group.name == group_name:
-                # Add 1 because 0 is the default group
-                return i + 1
-        # Fallback to default group
-        return 0
+        return next(
+            (
+                i + 1
+                for i, group in enumerate(self.custom)
+                if group.name == group_name
+            ),
+            0,
+        )
 
     def get_group_by_name(self, group_name):
-        for group in self.custom:
-            if group.name == group_name:
-                return group
-        return self.default
+        return next(
+            (group for group in self.custom if group.name == group_name),
+            self.default,
+        )
 
     @staticmethod
     def get_lightgroup_pass_name(group_name="", group_index=-1, is_default_group=False):
@@ -138,13 +139,14 @@ class LuxCoreLightGroupSettings(PropertyGroup):
         """
         names = [self.get_lightgroup_pass_name(is_default_group=True)]
 
-        for i, group in enumerate(self.custom):
-            names.append(self.get_lightgroup_pass_name(group.name, i))
-
+        names.extend(
+            self.get_lightgroup_pass_name(group.name, i)
+            for i, group in enumerate(self.custom)
+        )
         return names
 
     def get_all_groups(self):
-        return [self.default] + [group for group in self.custom]
+        return [self.default] + list(self.custom)
 
 
 def is_lightgroup_pass_name(string):

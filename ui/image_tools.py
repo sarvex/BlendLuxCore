@@ -75,9 +75,13 @@ class LUXCORE_IMAGE_PT_denoiser(Panel, LuxCoreImagePanel):
         if denoiser.type == "OIDN":
             layout.prop(denoiser, "max_memory_MB")
 
-        if denoiser.enabled and denoiser.type == "BCD":
-            if config.get_sampler() == "METROPOLIS" and not config.use_tiles:
-                layout.label(text="Metropolis sampler can lead to artifacts!", icon=icons.WARNING)
+        if (
+            denoiser.enabled
+            and denoiser.type == "BCD"
+            and config.get_sampler() == "METROPOLIS"
+            and not config.use_tiles
+        ):
+            layout.label(text="Metropolis sampler can lead to artifacts!", icon=icons.WARNING)
 
         sub = layout.column(align=True)
         # The user should not be able to request a refresh when denoiser is disabled
@@ -134,10 +138,10 @@ class LUXCORE_IMAGE_PT_statistics(Panel, LuxCoreImagePanel):
             return icons.RED_RHOMBUS
 
     def stat_lists_by_category(self, stats):
-        stat_lists = []
-        for category in stats.categories:
-            stat_lists.append([s for s in stats.to_list() if s.category == category])
-        return stat_lists
+        return [
+            [s for s in stats.to_list() if s.category == category]
+            for category in stats.categories
+        ]
 
     def draw_stats(self, stats, layout):
         stat_lists = self.stat_lists_by_category(stats)

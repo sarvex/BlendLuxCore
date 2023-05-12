@@ -14,11 +14,7 @@ class ImageExporter(object):
     def _save_to_temp_file(cls, image):
         # Note: We can't use utils.make_key(image) here because the memory address
         # might be re-used on undo, causing a key collision
-        if image.filepath_raw:
-            key = image.filepath_raw
-        else:
-            key = image.name
-
+        key = image.filepath_raw if image.filepath_raw else image.name
         if key in cls.temp_images:
             # Image was already exported
             temp_image = cls.temp_images[key]
@@ -27,11 +23,11 @@ class ImageExporter(object):
                 _, extension = os.path.splitext(image.filepath_raw)
             else:
                 # Generated images do not have a filepath, fallback to file_format
-                extension = "." + image.file_format.lower()
+                extension = f".{image.file_format.lower()}"
 
             temp_image = tempfile.NamedTemporaryFile(delete=False, suffix=extension)
 
-            print('Unpacking image "%s" to temp file "%s"' % (image.name, temp_image.name))
+            print(f'Unpacking image "{image.name}" to temp file "{temp_image.name}"')
             orig_filepath = image.filepath_raw
             orig_source = image.source
             image.filepath_raw = temp_image.name
@@ -51,20 +47,23 @@ class ImageExporter(object):
 
     @classmethod
     def export(cls, image, image_user, scene):
-        if image.source == "GENERATED":
+        if (
+            image.source != "GENERATED"
+            and image.source == "FILE"
+            and image.packed_file
+            or image.source == "GENERATED"
+        ):
             return cls._save_to_temp_file(image)
         elif image.source == "FILE":
-            if image.packed_file:
-                return cls._save_to_temp_file(image)
-            else:
-                try:
-                    filepath = utils.get_abspath(image.filepath, library=image.library,
-                                                 must_exist=True, must_be_existing_file=True)
-                    return filepath
-                except OSError as error:
+            try:
+                filepath = utils.get_abspath(image.filepath, library=image.library,
+                                             must_exist=True, must_be_existing_file=True)
+                return filepath
+            except OSError as error:
                     # Make the error message more precise
-                    raise OSError('Could not find image "%s" at path "%s" (%s)'
-                                  % (image.name, image.filepath, error))
+                raise OSError(
+                    f'Could not find image "{image.name}" at path "{image.filepath}" ({error})'
+                )
         elif image.source == "SEQUENCE":
             # Note: image sequences can never be packed
             try:
@@ -82,27 +81,34 @@ class ImageExporter(object):
                 raise OSError('Frame %d in image sequence "%s" does not exist (contains only %d frames)'
                               % (frame, image.name, len(indexed_filepaths)))
         else:
-            raise Exception('Unsupported image source "%s" in image "%s"' % (image.source, image.name))
+            raise Exception(
+                f'Unsupported image source "{image.source}" in image "{image.name}"'
+            )
 
     @classmethod
     def export_cycles_node_reader(cls, image):
         # TODO deduplicate code, support image sequences
-        if image.source == "GENERATED":
+        if (
+            image.source != "GENERATED"
+            and image.source == "FILE"
+            and image.packed_file
+            or image.source == "GENERATED"
+        ):
             return cls._save_to_temp_file(image)
         elif image.source == "FILE":
-            if image.packed_file:
-                return cls._save_to_temp_file(image)
-            else:
-                try:
-                    filepath = utils.get_abspath(image.filepath, library=image.library,
-                                                 must_exist=True, must_be_existing_file=True)
-                    return filepath
-                except OSError as error:
+            try:
+                filepath = utils.get_abspath(image.filepath, library=image.library,
+                                             must_exist=True, must_be_existing_file=True)
+                return filepath
+            except OSError as error:
                     # Make the error message more precise
-                    raise OSError('Could not find image "%s" at path "%s" (%s)'
-                                  % (image.name, image.filepath, error))
+                raise OSError(
+                    f'Could not find image "{image.name}" at path "{image.filepath}" ({error})'
+                )
         else:
-            raise Exception('Unsupported image source "%s" in image "%s"' % (image.source, image.name))
+            raise Exception(
+                f'Unsupported image source "{image.source}" in image "{image.name}"'
+            )
 
     @classmethod
     def cleanup(cls):

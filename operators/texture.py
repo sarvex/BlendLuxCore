@@ -15,10 +15,7 @@ class LUXCORE_OT_texture_show_nodetree(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         obj = context.object
-        if not obj:
-            return False
-
-        return obj.data.luxcore.node_tree
+        return False if not obj else obj.data.luxcore.node_tree
 
     def execute(self, context):
         light = context.active_object.data

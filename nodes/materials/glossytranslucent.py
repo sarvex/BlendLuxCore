@@ -136,12 +136,16 @@ class LuxCoreNodeMatGlossyTranslucent(LuxCoreNodeMaterial, bpy.types.Node):
             definitions["ks_bf"] = self.inputs["Specular Color"].export(exporter, depsgraph, props)
 
         if self.use_backface:
-            definitions.update({
+            definitions |= {
                 # Back face (on opposite side of normal)
                 "multibounce_bf": self.multibounce_bf,
-                "ka_bf": self.inputs["BF Absorption Color"].export(exporter, depsgraph, props),
-                "d_bf": self.inputs["BF Absorption Depth (nm)"].export(exporter, depsgraph, props),
-            })
+                "ka_bf": self.inputs["BF Absorption Color"].export(
+                    exporter, depsgraph, props
+                ),
+                "d_bf": self.inputs["BF Absorption Depth (nm)"].export(
+                    exporter, depsgraph, props
+                ),
+            }
 
             if self.use_ior_bf:
                 definitions["index_bf"] = self.inputs["BF IOR"].export(exporter, depsgraph, props)

@@ -61,7 +61,7 @@ class LuxCoreNodeTexBlenderVoronoi(LuxCoreNodeTexture, bpy.types.Node):
             "bright": self.bright,
             "contrast": self.contrast,
         }
-        definitions.update(self.inputs["3D Mapping"].export(exporter, depsgraph, props))
+        definitions |= self.inputs["3D Mapping"].export(exporter, depsgraph, props)
 
         if self.dist_metric == "minkovsky":
             definitions["exponent"] = self.minkowsky_exp

@@ -27,7 +27,7 @@ class LUXCORE_RENDER_PT_denoiser(RenderButtonsPanel, Panel):
     def draw(self, context):
         config = context.scene.luxcore.config
         denoiser = context.scene.luxcore.denoiser
-        
+
         layout = self.layout
 
         layout.use_property_split = True
@@ -44,9 +44,13 @@ class LUXCORE_RENDER_PT_denoiser(RenderButtonsPanel, Panel):
         col.prop(denoiser, "type", expand=False)
         col.enabled = denoiser.enabled and not LuxCoreRenderEngine.final_running
 
-        if denoiser.enabled and denoiser.type == "BCD":
-            if config.get_sampler() == "METROPOLIS" and not config.use_tiles:
-                layout.label(text="Metropolis sampler can lead to artifacts!", icon=icons.WARNING)
+        if (
+            denoiser.enabled
+            and denoiser.type == "BCD"
+            and config.get_sampler() == "METROPOLIS"
+            and not config.use_tiles
+        ):
+            layout.label(text="Metropolis sampler can lead to artifacts!", icon=icons.WARNING)
 
         if denoiser.type == "BCD":
             sub = layout.column(align=True)

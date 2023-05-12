@@ -68,7 +68,7 @@ def main():
 
             # Check if the file is already in BlendLuxCore/bin folder
             if os.path.isfile(dst):
-                if args.overwrite or confirm("Overwrite " + file + "? (y/n): "):
+                if args.overwrite or confirm(f"Overwrite {file}? (y/n): "):
                     os.remove(dst)
                     print("Copying", file, "from", root)
                     copy2(src, dst)
@@ -84,7 +84,7 @@ def main():
             files.remove(found_file)
 
     for file in files:
-        print('ERROR: Could not find file "%s".' % file)
+        print(f'ERROR: Could not find file "{file}".')
 
 
 if __name__ == "__main__":

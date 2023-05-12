@@ -75,10 +75,7 @@ def rays_per_sample_to_string(rays_per_sample):
 def get_rays_per_sample(stat_props):
     samples_per_sec = stat_props.Get("stats.renderengine.total.samplesec").GetFloat()
     rays = stat_props.Get("stats.renderengine.performance.total").GetFloat()
-    if samples_per_sec > 0:
-        return rays / samples_per_sec
-    else:
-        return 0
+    return rays / samples_per_sec if samples_per_sec > 0 else 0
 
 
 def get_vram_usage(stat_props):
@@ -94,12 +91,16 @@ def get_vram_usage(stat_props):
             continue
 
         # Max memory available is limited by the device with least amount of memory
-        device_max_memory = stat_props.Get("stats.renderengine.devices." + device_name + ".memory.total").GetFloat()
+        device_max_memory = stat_props.Get(
+            f"stats.renderengine.devices.{device_name}.memory.total"
+        ).GetFloat()
         device_max_memory = int(device_max_memory / (1024 * 1024))
         if device_max_memory < max_memory:
             max_memory = device_max_memory
 
-        device_used_memory = stat_props.Get("stats.renderengine.devices." + device_name + ".memory.used").GetFloat()
+        device_used_memory = stat_props.Get(
+            f"stats.renderengine.devices.{device_name}.memory.used"
+        ).GetFloat()
         device_used_memory = int(device_used_memory / (1024 * 1024))
         if device_used_memory > used_memory:
             used_memory = device_used_memory
@@ -122,10 +123,7 @@ def vram_better(first_usage_tuple, second_usage_tuple):
     
     
 def bool_to_string(value):
-    if value:
-        return "Enabled"
-    else:
-        return "Disabled"
+    return "Enabled" if value else "Disabled"
 
 
 class Stat:
@@ -146,10 +144,7 @@ class Stat:
 
     @property
     def value(self):
-        if self.get_value_func:
-            return self.get_value_func(self._value)
-        else:
-            return self._value
+        return self.get_value_func(self._value) if self.get_value_func else self._value
 
     @value.setter
     def value(self, value):
@@ -176,8 +171,7 @@ class LuxCoreRenderStats:
         # Some stats use rounding getter functions, because it is better for the user
         # if values that only differ by a very small amount appear as equal in the UI.
 
-        categories = []
-        categories.append("Statistics")
+        categories = ["Statistics"]
         self.render_time = Stat("Render Time", categories[-1],
                                 0, smaller_is_better, time_to_string, get_rounded)
         self.samples_eye = Stat("Samples", categories[-1], 0, greater_is_better)
@@ -251,8 +245,10 @@ class LuxCoreRenderStatsCollection(PropertyGroup):
 
         slot_names = [(slot.name or "Slot %d" % (i + 1))
                       for i, slot in enumerate(render_result.render_slots)]
-        items = [(str(i), name, "", i + index_offset) for i, name in enumerate(slot_names)]
-        return items
+        return [
+            (str(i), name, "", i + index_offset)
+            for i, name in enumerate(slot_names)
+        ]
 
     def first_slot_items_callback(self, context):
         # The special "current" entry should be the default, so we give it index 0
@@ -294,15 +290,13 @@ class LuxCoreRenderStatsCollection(PropertyGroup):
         Note that this is not necessarily the slot currently being
         rendered (only at the very beginning of the rendering).
         """
-        render_result = self._get_render_result()
-        if not render_result:
+        if render_result := self._get_render_result():
+            return self[render_result.render_slots.active_index]
+        else:
             return self[0]
 
-        slot_index = render_result.render_slots.active_index
-        return self[slot_index]
-
     def _get_render_result(self):
-        for image in bpy.data.images:
-            if image.type == "RENDER_RESULT":
-                return image
-        return None
+        return next(
+            (image for image in bpy.data.images if image.type == "RENDER_RESULT"),
+            None,
+        )

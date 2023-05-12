@@ -223,7 +223,7 @@ class LUXCORE_CAMERA_PT_image_pipeline_tonemapper(CameraButtonsPanel, Panel):
         pipeline = context.camera.luxcore.imagepipeline
         tonemapper = pipeline.tonemapper
         layout.enabled = tonemapper.enabled
-        
+
         layout.prop(tonemapper, "type", expand=False)
 
         if tonemapper.type == "TONEMAP_LINEAR":
@@ -243,7 +243,7 @@ class LUXCORE_CAMERA_PT_image_pipeline_tonemapper(CameraButtonsPanel, Panel):
 
         if len(context.scene.view_layers) > 1 and tonemapper.is_automatic():
             name = "Auto" if tonemapper.type == "TONEMAP_LINEAR" else "Reinhard"
-            msg = name + " and multiple renderlayers will cause brightness difference!"
+            msg = f"{name} and multiple renderlayers will cause brightness difference!"
             col = layout.column(align=True)
             col.label(text=msg, icon=icons.WARNING)
 

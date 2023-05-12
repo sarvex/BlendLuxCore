@@ -33,5 +33,5 @@ class LuxCoreNodeTexMarble(LuxCoreNodeTexture, bpy.types.Node):
             "scale": self.scale,
             "variation": self.variation,
         }
-        definitions.update(self.inputs["3D Mapping"].export(exporter, depsgraph, props))
+        definitions |= self.inputs["3D Mapping"].export(exporter, depsgraph, props)
         return self.create_props(props, definitions, luxcore_name)

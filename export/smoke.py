@@ -10,7 +10,7 @@ def convert(smoke_obj, channel, depsgraph):
     smoke_domain_mod = utils.find_smoke_domain_modifier(smoke_obj)
 
     if smoke_domain_mod is None:
-        msg = 'Object "%s" is not a smoke domain' % smoke_obj.name
+        msg = f'Object "{smoke_obj.name}" is not a smoke domain'
         raise Exception(msg)
 
     settings = smoke_domain_mod.domain_settings
@@ -28,11 +28,11 @@ def convert(smoke_obj, channel, depsgraph):
     elif channel == "velocity":
         grid = settings.velocity_grid
     else:
-        raise NotImplementedError("Unknown channel type " + channel)
+        raise NotImplementedError(f"Unknown channel type {channel}")
 
     # Prevent a crash
     if len(grid) == 0:
-        msg = 'Object "%s": No smoke data (simulate some frames first)' % smoke_obj.name
+        msg = f'Object "{smoke_obj.name}": No smoke data (simulate some frames first)'
         raise Exception(msg)
 
     # We have to convert Blender's bpy_prop_array because it doesn't support the Python buffer interface.
@@ -46,9 +46,8 @@ def convert(smoke_obj, channel, depsgraph):
     if bpy.app.version[:2] < (2, 82):
         if settings.use_high_resolution and channel not in {"velocity", "heat"}:
             resolution = [res * (settings.amplify + 1) for res in resolution]
-    else:
-        if settings.use_noise:
-            resolution = [res * settings.noise_scale for res in resolution]
+    elif settings.use_noise:
+        resolution = [res * settings.noise_scale for res in resolution]
 
     print("conversion to array took %.3f s" % (time() - start))
 

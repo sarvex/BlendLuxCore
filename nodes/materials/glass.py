@@ -132,7 +132,6 @@ class LuxCoreNodeMatGlass(LuxCoreNodeMaterial, bpy.types.Node):
 
     def get_interior_volume(self):
         node_tree = self.id_data
-        active_output = get_active_output(node_tree)
-        if active_output:
+        if active_output := get_active_output(node_tree):
             return utils_node.get_linked_node(active_output.inputs["Interior Volume"])
         return False

@@ -95,13 +95,12 @@ class LuxCoreNode:
 
         if cache_key in exporter.node_cache:
             return exporter.node_cache[cache_key]
-        else:
-            # Nodes can return a different luxcore_name than the one that
-            # is passed in to sub_export, for example when an implicit scale
-            # texture is added.
-            luxcore_name = self.sub_export(exporter, depsgraph, props, luxcore_name, output_socket)
-            exporter.node_cache[cache_key] = luxcore_name
-            return luxcore_name
+        # Nodes can return a different luxcore_name than the one that
+        # is passed in to sub_export, for example when an implicit scale
+        # texture is added.
+        luxcore_name = self.sub_export(exporter, depsgraph, props, luxcore_name, output_socket)
+        exporter.node_cache[cache_key] = luxcore_name
+        return luxcore_name
 
     def create_props(self, props, definitions, luxcore_name):
         prefix = self.prefix + luxcore_name + "."
@@ -142,8 +141,7 @@ class LuxCoreNodeMaterial(LuxCoreNode, bpy.types.Node):
             definitions["transparency"] = transparency
 
         bump_socket = self.inputs["Bump"]
-        bump = bump_socket.export(exporter, depsgraph, props)
-        if bump:
+        if bump := bump_socket.export(exporter, depsgraph, props):
             definitions["bumptex"] = bump
 
             from_node = bump_socket.links[0].from_node
@@ -237,8 +235,8 @@ class LuxCoreNodeVolume(LuxCoreNode, bpy.types.Node):
 
         if self.inputs["Absorption"].is_linked:
             # Implicitly create a colordepth texture with unique name
-            tex_name = self.make_name() + "_colordepth"
-            helper_prefix = "scene.textures." + tex_name + "."
+            tex_name = f"{self.make_name()}_colordepth"
+            helper_prefix = f"scene.textures.{tex_name}."
             helper_defs = {
                 "type": "colordepth",
                 "kt": abs_col,
@@ -271,8 +269,8 @@ class LuxCoreNodeVolume(LuxCoreNode, bpy.types.Node):
 
         if scattering_scale_socket.is_linked or scattering_col_socket.is_linked:
             # Implicitly create a colordepth texture with unique name
-            tex_name = self.make_name() + "_scale"
-            helper_prefix = "scene.textures." + tex_name + "."
+            tex_name = f"{self.make_name()}_scale"
+            helper_prefix = f"scene.textures.{tex_name}."
             helper_defs = {
                 "type": "scale",
                 "texture1": scattering_scale,
@@ -297,7 +295,7 @@ class LuxCoreNodeShape(LuxCoreNode, bpy.types.Node):
     prefix = "scene.shapes."
 
     def make_shape_name(self, base_shape_name):
-        return base_shape_name + "_" + utils.make_key_from_bpy_struct(self)
+        return f"{base_shape_name}_{utils.make_key_from_bpy_struct(self)}"
 
     def export_shape(self, exporter, depsgraph, props, base_shape_name):
         raise NotImplementedError("Subclasses have to implement this method!")
@@ -340,18 +338,14 @@ class LuxCoreNodeTreePointer(LuxCoreNode, bpy.types.Node):
 
     def draw_label(self):
         if self.node_tree:
-            return 'Pointer to "%s"' % self.node_tree.name
+            return f'Pointer to "{self.node_tree.name}"'
         else:
             return self.bl_label
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "filter", expand=True)
 
-        if self.node_tree:
-            icon = TREE_ICONS[self.node_tree.bl_idname]
-        else:
-            icon = "NODETREE"
-
+        icon = TREE_ICONS[self.node_tree.bl_idname] if self.node_tree else "NODETREE"
         utils_ui.template_node_tree(layout, self, "node_tree", icon,
                                     "LUXCORE_MT_pointer_select_node_tree",
                                     "luxcore.pointer_show_node_tree",
@@ -415,9 +409,7 @@ class Roughness:
         """
         sockets = ["U-Roughness", "V-Roughness", "Roughness"]
         # Back face variants
-        for socket in sockets.copy():
-            sockets.append("BF " + socket)
-
+        sockets.extend(f"BF {socket}" for socket in sockets.copy())
         for socket in sockets:
             try:
                 node.inputs[socket].enabled = node.rough

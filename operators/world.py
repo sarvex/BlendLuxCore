@@ -19,9 +19,7 @@ class LUXCORE_OT_world_new_volume_node_tree(bpy.types.Operator):
         return poll_world(context)
 
     def execute(self, context):
-        name = ""
-        if context.world:
-            name = context.world.name
+        name = context.world.name if context.world else ""
         name += "_Volume"
 
         node_tree = bpy.data.node_groups.new(name=name, type="luxcore_volume_nodes")

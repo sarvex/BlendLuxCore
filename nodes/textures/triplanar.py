@@ -48,7 +48,7 @@ class LuxCoreNodeTexTriplanar(LuxCoreNodeTexture, bpy.types.Node):
             "texture2": tex2,
             "texture3": tex3,
         }
-        definitions.update(self.inputs["3D Mapping"].export(exporter, depsgraph, props))
+        definitions |= self.inputs["3D Mapping"].export(exporter, depsgraph, props)
 
         if not utils_node.get_link(self.inputs["3D Mapping"]):
             definitions["mapping.type"] = "localmapping3d"

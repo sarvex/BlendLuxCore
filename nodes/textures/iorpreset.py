@@ -22,8 +22,7 @@ class LuxCoreNodeTexIORPreset(LuxCoreNodeTexture, bpy.types.Node):
 
     def update_ior_value_float(self, context):
         # Change the node label to indicate the selected IOR preset
-        self.label = "IOR: {} ({})".format(self.ior_name_text,
-                                           self.ior_value_text)
+        self.label = f"IOR: {self.ior_name_text} ({self.ior_value_text})"
         utils_node.force_viewport_update(self, context)
         return None
 
@@ -56,13 +55,14 @@ class LuxCoreNodeTexIORPreset(LuxCoreNodeTexture, bpy.types.Node):
         row.prop(self, "ior_value_text", text="Value", emboss=False)
         op_num = row.operator("luxcore.ior_preset_values", icon="SORTSIZE")
 
-        # Get the index of the node tree in bpy.data.node_groups
-        tree_index = None
-        for index, tree in enumerate(bpy.data.node_groups):
-            if tree == self.id_data:
-                tree_index = index
-                break
-
+        tree_index = next(
+            (
+                index
+                for index, tree in enumerate(bpy.data.node_groups)
+                if tree == self.id_data
+            ),
+            None,
+        )
         for operator in [op_alpha, op_num]:
             operator.node_name = self.name
             operator.node_tree_index = tree_index

@@ -72,9 +72,7 @@ class LUXCORE_OT_material_copy(bpy.types.Operator):
         # Create a copy of the material
         new_mat = current_mat.copy()
 
-        current_node_tree = current_mat.luxcore.node_tree
-
-        if current_node_tree:
+        if current_node_tree := current_mat.luxcore.node_tree:
             # Create a copy of the node_tree as well
             new_node_tree = current_node_tree.copy()
             new_node_tree.name = make_nodetree_name(new_mat.name)
@@ -192,14 +190,10 @@ class LUXCORE_OT_material_show_nodetree(bpy.types.Operator):
         if not obj:
             return False
 
-        mat = obj.active_material
-        if not mat:
-            return False
-
-        if mat.luxcore.use_cycles_nodes:
-            return mat.node_tree
+        if mat := obj.active_material:
+            return mat.node_tree if mat.luxcore.use_cycles_nodes else mat.luxcore.node_tree
         else:
-            return mat.luxcore.node_tree
+            return False
 
     def execute(self, context):
         mat = context.active_object.active_material
@@ -224,11 +218,7 @@ class LUXCORE_OT_mat_nodetree_new(bpy.types.Operator):
 
     def execute(self, context):
         mat = context.object.active_material
-        if mat:
-            name = make_nodetree_name(mat.name)
-        else:
-            name = "Material Node Tree"
-
+        name = make_nodetree_name(mat.name) if mat else "Material Node Tree"
         node_tree = bpy.data.node_groups.new(name=name, type="luxcore_material_nodes")
         init_mat_node_tree(node_tree)
 

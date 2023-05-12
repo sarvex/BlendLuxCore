@@ -86,15 +86,14 @@ class LuxCoreNodeTexFresnel(LuxCoreNodeTexture, bpy.types.Node):
 
                 definitions = {
                     "file": filepath,
+                    "type": "fresnelluxpop"
+                    if self.file_type == "luxpop"
+                    else "fresnelsopra",
                 }
 
-                if self.file_type == "luxpop":
-                    definitions["type"] = "fresnelluxpop"
-                else:
-                    definitions["type"] = "fresnelsopra"
             except OSError as error:
-                error = 'Could not find .nk file at path "%s"' % self.filepath
-                msg = 'Node "%s" in tree "%s": %s' % (self.name, self.id_data.name, error)
+                error = f'Could not find .nk file at path "{self.filepath}"'
+                msg = f'Node "{self.name}" in tree "{self.id_data.name}": {error}'
                 LuxCoreErrorLog.add_warning(msg)
 
                 definitions = {
@@ -108,6 +107,6 @@ class LuxCoreNodeTexFresnel(LuxCoreNodeTexture, bpy.types.Node):
                 "k": list(self.k),
             }
         else:
-            raise NotImplementedError("Unkown input type: " + self.input_type)
-        
+            raise NotImplementedError(f"Unkown input type: {self.input_type}")
+
         return self.create_props(props, definitions, luxcore_name)

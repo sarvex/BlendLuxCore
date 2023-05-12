@@ -20,7 +20,7 @@ class LuxCoreNodeMatNull(LuxCoreNodeMaterial, bpy.types.Node):
         # Use a color or texture on the transparency property.
         # We only use it when we need it.
         transparency = self.inputs["Transmission Color"].export(exporter, depsgraph, props)
-        if transparency != 1.0 and transparency != [1.0, 1.0, 1.0]:
+        if transparency not in [1.0, [1.0, 1.0, 1.0]]:
             definitions["transparency"] = transparency
 
         return self.create_props(props, definitions, luxcore_name)

@@ -22,5 +22,5 @@ class LuxCoreNodeTexDots(LuxCoreNodeTexture, bpy.types.Node):
             "inside": self.inputs["Inside"].export(exporter, depsgraph, props),
             "outside": self.inputs["Outside"].export(exporter, depsgraph,  props),
         }
-        definitions.update(self.inputs["2D Mapping"].export(exporter, depsgraph, props))
+        definitions |= self.inputs["2D Mapping"].export(exporter, depsgraph, props)
         return self.create_props(props, definitions, luxcore_name)

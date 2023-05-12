@@ -141,7 +141,10 @@ class LOLAddLocalOperator(Operator):
         new_asset = {}
         data_block = set()
 
-        filepath = join(user_preferences.global_dir, 'local_assets_' + ui_props.asset_type.lower() + '.json')
+        filepath = join(
+            user_preferences.global_dir,
+            f'local_assets_{ui_props.asset_type.lower()}.json',
+        )
         if isfile(filepath):
             with open(filepath) as file_handle:
                 assets = json.loads(file_handle.read())
@@ -201,9 +204,9 @@ class LOLAddLocalOperator(Operator):
                     studio = '"' + join(dirname(dirname(dirname(__file__))), 'scripts', 'LOL', 'material_thumbnail.blend') + '"'
 
                 script = '"' + join(dirname(dirname(dirname(__file__))), 'scripts', 'LOL', 'render_thumbnail.py') + '"'
-                process = Popen(bpy.app.binary_path + ' ' + studio
-                                + ' -b --python ' + script + ' -- ' + blendfilepath + ' ' + str(upload_props.samples)
-                                + ' ' + ui_props.asset_type.lower())
+                process = Popen(
+                    f'{bpy.app.binary_path} {studio} -b --python {script} -- {blendfilepath} {str(upload_props.samples)} {ui_props.asset_type.lower()}'
+                )
                 process.wait()
                 assetpath = join(user_preferences.global_dir, ui_props.asset_type.lower())
                 thumbnailname = new_asset['name'].replace(' ', '_') + '.jpg'
@@ -258,28 +261,31 @@ class LOLScanLocalOperator(Operator):
 
         for f in files:
             hash = calc_hash(join(assetpath, f))
-            if not hash in hashlist:
+            if hash not in hashlist:
                 new_asset = upload_props.add_list.add()
                 new_asset["name"] = splitext(f)[0].replace("_", " ")
                 new_asset["category"] = "Misc"
                 new_asset["hash"] = hash
 
-                tpath = join(user_preferences.global_dir, ui_props.asset_type.lower(), "preview", "local",
-                                     splitext(f)[0] + '.jpg')
+                tpath = join(
+                    user_preferences.global_dir,
+                    ui_props.asset_type.lower(),
+                    "preview",
+                    "local",
+                    f'{splitext(f)[0]}.jpg',
+                )
 
                 if exists(tpath):
                     img = bpy.data.images.load(tpath)
-                    img.name = '.LOL_preview'
                 else:
                     rootdir = dirname(dirname(dirname(__file__)))
                     path = join(rootdir, 'thumbnails', 'thumbnail_notready.jpg')
                     img = bpy.data.images.load(path)
-                    img.name = '.LOL_preview'
-
+                img.name = '.LOL_preview'
                 new_asset["thumbnail"] = img
 
                 with bpy.data.libraries.load(join(assetpath, f), link=True) as (data_from, data_to):
-                    data_to.objects = [name for name in data_from.objects]
+                    data_to.objects = list(data_from.objects)
 
                 bbox_min, bbox_max = calc_bbox(context, data_to.objects)
 
@@ -288,5 +294,5 @@ class LOLScanLocalOperator(Operator):
 
                 new_asset['bbox_min'] = bbox_min
                 new_asset['bbox_max'] = bbox_max
-                new_asset["url"] = join("local", splitext(f)[0]+".zip")
+                new_asset["url"] = join("local", f"{splitext(f)[0]}.zip")
         return {'FINISHED'}

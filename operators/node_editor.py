@@ -31,10 +31,9 @@ def _calc_emission_viewer_gain(context):
 
 
 def _is_allowed_input(allowed_inputs, socket):
-    for allowed_class in allowed_inputs:
-        if isinstance(socket, allowed_class):
-            return True
-    return False
+    return any(
+        isinstance(socket, allowed_class) for allowed_class in allowed_inputs
+    )
 
 
 class LUXCORE_OT_node_editor_viewer(bpy.types.Operator):
@@ -59,12 +58,14 @@ class LUXCORE_OT_node_editor_viewer(bpy.types.Operator):
         if not active_output:
             return {'CANCELLED'}
 
-        viewer_node = None
-        for node in node_tree.nodes:
-            if luxcore_viewer_reroute_mark in node:
-                viewer_node = node
-                break
-
+        viewer_node = next(
+            (
+                node
+                for node in node_tree.nodes
+                if luxcore_viewer_reroute_mark in node
+            ),
+            None,
+        )
         active_node = node_tree.nodes.active
         target_socket = None
         allowed_inputs = set()
@@ -107,10 +108,18 @@ class LUXCORE_OT_node_editor_viewer(bpy.types.Operator):
                     viewer_node.location = active_output.location + Vector((-10, 55))
                     viewer_node[luxcore_viewer_mark] = True
                     viewer_node[luxcore_viewer_reroute_mark] = True
-                    # Diffuse color for albedo preview (material shading mode), emission for regular viewport render
-                    sockets_to_link.append((viewer_node.outputs[0], viewer_matte.inputs["Diffuse Color"]))
-                    sockets_to_link.append((viewer_node.outputs[0], viewer_emission.inputs["Color"]))
-
+                    sockets_to_link.extend(
+                        (
+                            (
+                                viewer_node.outputs[0],
+                                viewer_matte.inputs["Diffuse Color"],
+                            ),
+                            (
+                                viewer_node.outputs[0],
+                                viewer_emission.inputs["Color"],
+                            ),
+                        )
+                    )
                 target_socket = viewer_node.inputs[0]
                 allowed_inputs = {LuxCoreSocketColor, LuxCoreSocketFloat, LuxCoreSocketVector}
         elif node_tree.bl_idname == "luxcore_texture_nodes":
@@ -130,8 +139,7 @@ class LUXCORE_OT_node_editor_viewer(bpy.types.Operator):
             return {"CANCELLED"}
         active_socket_index = 0
 
-        old_link = utils_node.get_link(target_socket)
-        if old_link:
+        if old_link := utils_node.get_link(target_socket):
             old_index = old_link.from_node.outputs.find(old_link.from_socket.name)
             active_socket_index = old_index + 1
 

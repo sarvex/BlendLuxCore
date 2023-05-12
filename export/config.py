@@ -51,11 +51,7 @@ def convert(exporter, scene, context=None, engine=None):
             filter_type = config.filter
 
         if config.dls_cache.enabled:
-            if is_viewport_render:
-                # Avoid building DLS cache when rendering in viewport, fall back to log power
-                light_strategy = "LOG_POWER"
-            else:
-                light_strategy = "DLS_CACHE"
+            light_strategy = "LOG_POWER" if is_viewport_render else "DLS_CACHE"
         else:
             light_strategy = config.light_strategy
 
@@ -127,7 +123,7 @@ def convert(exporter, scene, context=None, engine=None):
 
         return config_props
     except Exception as error:
-        msg = 'Config: %s' % error
+        msg = f'Config: {error}'
         # Note: Exceptions in the config are critical, we can't render without a config
         LuxCoreErrorLog.add_error(msg)
         import traceback
@@ -176,7 +172,11 @@ def convert_viewport_engine(context, scene, definitions, config):
     using_hybridbackforward = utils.using_hybridbackforward_in_viewport(scene)
 
     device = viewport.device
-    if device == "OCL" and not (utils.is_opencl_build() or utils.is_cuda_build()):
+    if (
+        device == "OCL"
+        and not utils.is_opencl_build()
+        and not utils.is_cuda_build()
+    ):
         msg = "Config: LuxCore was built without GPU support, can't use GPU engine in viewport"
         LuxCoreErrorLog.add_warning(msg)
         device = "CPU"
@@ -276,37 +276,36 @@ def _convert_final_engine(scene, definitions, config):
         sampler = "TILEPATHSAMPLER"
     else:
         sampler = config.get_sampler()
-        
+
     if sampler in {"SOBOL", "RANDOM"}:
         sampler_type = sampler.lower()
-        
+
         # Adaptive sampling
         adaptive_strength = config.sobol_adaptive_strength
         if adaptive_strength > 0:
             definitions["film.noiseestimation.warmup"] = config.noise_estimation.warmup
             definitions["film.noiseestimation.step"] = config.noise_estimation.step
         definitions[f"sampler.{sampler_type}.adaptive.strength"] = adaptive_strength
-        
+
         # Sampler pattern
         if config.using_out_of_core():
             bucketsize = 1
             tilesize = 16
             supersampling = int(config.out_of_core_supersampling)
             overlapping = SamplingOverlap.OUT_OF_CORE
+        elif config.sampler_pattern == "PROGRESSIVE":
+            bucketsize = 16
+            tilesize = 16
+            supersampling = 1
+            overlapping = SamplingOverlap.PROGRESSIVE
+        elif config.sampler_pattern == "CACHE_FRIENDLY":
+            bucketsize = 1
+            tilesize = 16
+            supersampling = 1
+            overlapping = SamplingOverlap.CACHE_FRIENDLY
         else:
-            if config.sampler_pattern == "PROGRESSIVE":
-                bucketsize = 16
-                tilesize = 16
-                supersampling = 1
-                overlapping = SamplingOverlap.PROGRESSIVE
-            elif config.sampler_pattern == "CACHE_FRIENDLY":
-                bucketsize = 1
-                tilesize = 16
-                supersampling = 1
-                overlapping = SamplingOverlap.CACHE_FRIENDLY
-            else:
-                raise Exception("Unknown sampler pattern")
-        
+            raise Exception("Unknown sampler pattern")
+
         definitions[f"sampler.{sampler_type}.bucketsize"] = bucketsize  # Must be power of 2
         definitions[f"sampler.{sampler_type}.tilesize"] = tilesize  # Must be power of 2
         definitions[f"sampler.{sampler_type}.supersampling"] = supersampling
@@ -357,14 +356,14 @@ def _convert_filesaver(scene, definitions, luxcore_engine):
     if not blend_name:
         blend_name = "Untitled"
 
-    dir_name = blend_name + "_LuxCore"
+    dir_name = f"{blend_name}_LuxCore"
     frame_name = "%05d" % scene.frame_current
 
     # If we have multiple render layers, we append the layer name
     if len(scene.view_layers) > 1:
         # TODO 2.8
         render_layer = utils_view_layer.get_current_view_layer(scene)
-        frame_name += "_" + render_layer.name
+        frame_name += f"_{render_layer.name}"
 
     if config.filesaver_format == "BIN":
         # For binary format, the frame number is used as file name instead of directory name
@@ -396,12 +395,7 @@ def _convert_filesaver(scene, definitions, luxcore_engine):
 def _convert_seed(scene, definitions):
     config = scene.luxcore.config
 
-    if config.use_animated_seed:
-        # frame_current can be 0, but not negative, while LuxCore seed can only be > 1
-        seed = scene.frame_current + 1
-    else:
-        seed = config.seed
-
+    seed = scene.frame_current + 1 if config.use_animated_seed else config.seed
     definitions["renderengine.seed"] = seed
 
 

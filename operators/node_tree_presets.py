@@ -51,10 +51,9 @@ class LUXCORE_OT_preset_material(bpy.types.Operator):
     @classmethod
     def description(cls, context, properties):
         preset = properties.preset
-        
+
         if preset in cls.basic_mapping:
-            return "Add a simple " + preset + " node setup"
-        # Category: Advanced
+            return f"Add a simple {preset} node setup"
         elif preset == "Smoke":
             return "Add a smoke setup"
         elif preset == "Colored Smoke":
@@ -70,7 +69,7 @@ class LUXCORE_OT_preset_material(bpy.types.Operator):
                     'to camera rays (which is not the case when using the "Architectural" '
                     'setting on a glass node)')
         else:
-            raise Exception("Unknown preset: " + preset)
+            raise Exception(f"Unknown preset: {preset}")
 
     def _add_node_tree(self, name):
         node_tree = bpy.data.node_groups.new(name=name, type="luxcore_material_nodes")
@@ -200,7 +199,7 @@ class LUXCORE_OT_preset_material(bpy.types.Operator):
 
         # A smoke material setup only makes sense on the smoke domain object
         if not is_smoke_domain:
-            self.report({"ERROR"}, 'Object "%s" is not a smoke domain!' % obj.name)
+            self.report({"ERROR"}, f'Object "{obj.name}" is not a smoke domain!')
 
     def _preset_colored_smoke(self, obj, node_tree, output):
         # If it is not a smoke domain, create the material anyway, but warn the user
@@ -241,7 +240,7 @@ class LUXCORE_OT_preset_material(bpy.types.Operator):
 
         # A smoke material setup only makes sense on the smoke domain object
         if not is_smoke_domain:
-            self.report({"ERROR"}, 'Object "%s" is not a smoke domain!' % obj.name)
+            self.report({"ERROR"}, f'Object "{obj.name}" is not a smoke domain!')
 
     def _preset_fire_and_smoke(self, obj, node_tree, output):
         # If it is not a smoke domain, create the material anyway, but warn the user
@@ -313,7 +312,7 @@ class LUXCORE_OT_preset_material(bpy.types.Operator):
 
         # A smoke material setup only makes sense on the smoke domain object
         if not is_smoke_domain:
-            self.report({"ERROR"}, 'Object "%s" is not a smoke domain!' % obj.name)
+            self.report({"ERROR"}, f'Object "{obj.name}" is not a smoke domain!')
 
     def _preset_colored_glass(self, obj, node_tree, output):
         glass = new_node("LuxCoreNodeMatGlass", node_tree, output)

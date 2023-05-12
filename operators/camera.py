@@ -19,9 +19,7 @@ class LUXCORE_OT_camera_new_volume_node_tree(bpy.types.Operator):
         return poll_camera(context)
 
     def execute(self, context):
-        name = ""
-        if context.camera:
-            name = context.camera.name
+        name = context.camera.name if context.camera else ""
         name += "_Volume"
 
         node_tree = bpy.data.node_groups.new(name=name, type="luxcore_volume_nodes")

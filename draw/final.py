@@ -79,7 +79,7 @@ class FrameBufferFinal(object):
                     try:
                         self._import_aov(output_name, output_type, render_layer, session, engine)
                     except RuntimeError as error:
-                        print("Error on import of AOV %s: %s" % (output_name, error))
+                        print(f"Error on import of AOV {output_name}: {error}")
 
             lightgroup_pass_names = scene.luxcore.lightgroups.get_pass_names()
             for i, name in enumerate(lightgroup_pass_names):
@@ -92,7 +92,7 @@ class FrameBufferFinal(object):
                 try:
                     self._import_aov(output_name, output_type, render_layer, session, engine, True, i, name)
                 except RuntimeError as error:
-                    print("Error on import of Lightgroup AOV of group %s: %s" % (name, error))
+                    print(f"Error on import of Lightgroup AOV of group {name}: {error}")
 
             self._refresh_denoiser(engine, session, scene, render_layer, render_stopped)
 
@@ -102,18 +102,14 @@ class FrameBufferFinal(object):
 
     def _import_aov(self, output_name, output_type, render_layer, session, engine,
                     execute_imagepipeline=True, index=0, lightgroup_name=""):
-        if output_name in AOVS:
-            aov = AOVS[output_name]
-        else:
-            aov = DEFAULT_AOV_SETTINGS
-
+        aov = AOVS[output_name] if output_name in AOVS else DEFAULT_AOV_SETTINGS
         if output_name in AOVS_WITH_ID:
             # Add the index so we can differentiate between the outputs with id
             output_name += str(index)
 
         if output_name in engine.aov_imagepipelines:
             index = engine.aov_imagepipelines[output_name]
-            
+
             if output_name == "DENOISED" and self._transparent:
                 output_type = pyluxcore.FilmOutputType.RGBA_IMAGEPIPELINE
             else:
@@ -143,7 +139,7 @@ class FrameBufferFinal(object):
             return
 
         output_name = engine.DENOISED_OUTPUT_NAME
-        
+
         if self._transparent:
             output_type = pyluxcore.FilmOutputType.RGBA_IMAGEPIPELINE
         else:
@@ -193,7 +189,7 @@ class FrameBufferFinal(object):
                 self._import_aov(output_name, output_type, render_layer, session, engine,
                                  execute_imagepipeline=False)
             except RuntimeError as error:
-                print("Error on import of denoised result: %s" % error)
+                print(f"Error on import of denoised result: {error}")
 
             if not was_paused and session.IsInPause():
                 session.Resume()
@@ -203,7 +199,7 @@ class FrameBufferFinal(object):
 
             # Reset the refresh button
             LuxCoreDenoiser.refresh = False
-            engine.update_stats("Denoiser Done", "Elapsed: {} s".format(elapsed))
+            engine.update_stats("Denoiser Done", f"Elapsed: {elapsed} s")
         else:
             # If we do not write something into the result, the image will be black.
             # So we re-use the result from the last denoiser run.

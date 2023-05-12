@@ -77,9 +77,7 @@ class LuxCoreNodeMatOutput(LuxCoreNodeOutput, bpy.types.Node):
         # Copy the links to volumes
         for orig_input in orig_node.inputs:
             if orig_input.is_linked and orig_input.name in {"Interior Volume", "Exterior Volume"}:
-                # We can not use orig_input.links because of a Blender exception
-                links = utils_node.get_links(node_tree, orig_input)
-                if links:
+                if links := utils_node.get_links(node_tree, orig_input):
                     from_socket = links[0].from_socket
                     to_socket = self.inputs[orig_input.name]
                     node_tree.links.new(from_socket, to_socket)
@@ -150,7 +148,7 @@ class LuxCoreNodeMatOutput(LuxCoreNodeOutput, bpy.types.Node):
                              icon=icons.WORLD, toggle=True)
 
     def export(self, exporter, depsgraph, props, luxcore_name):
-        prefix = "scene.materials." + luxcore_name + "."
+        prefix = f"scene.materials.{luxcore_name}."
         definitions = {}
 
         # Invalidate node cache
@@ -198,13 +196,13 @@ class LuxCoreNodeMatOutput(LuxCoreNodeOutput, bpy.types.Node):
             active_output.export(exporter, depsgraph, props, luxcore_name)
             return luxcore_name
         except Exception as error:
-            msg = 'Node Tree "%s": %s' % (node_tree.name, error)
+            msg = f'Node Tree "{node_tree.name}": {error}'
             LuxCoreErrorLog.add_warning(msg)
             import traceback
             traceback.print_exc()
             return None
 
     def _convert_fallback(self, props, luxcore_name):
-        prefix = "scene.materials." + luxcore_name + "."
-        props.Set(pyluxcore.Property(prefix + "type", "matte"))
-        props.Set(pyluxcore.Property(prefix + "kd", [0, 0, 0]))
+        prefix = f"scene.materials.{luxcore_name}."
+        props.Set(pyluxcore.Property(f"{prefix}type", "matte"))
+        props.Set(pyluxcore.Property(f"{prefix}kd", [0, 0, 0]))

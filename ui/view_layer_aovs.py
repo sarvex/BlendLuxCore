@@ -13,11 +13,11 @@ class LUXCORE_RENDERLAYER_PT_aovs(ViewLayerButtonsPanel, Panel):
         layout.label(text="", icon_value=icon_manager.get_icon_id("logotype"))
 
     def draw(self, context):
-        layout = self.layout
-
         engine_is_path = context.scene.luxcore.config.engine == "PATH"
 
         if not engine_is_path:
+            layout = self.layout
+
             layout.label(text="The Bidir engine does not support all AOVs", icon=icons.INFO)
 
 

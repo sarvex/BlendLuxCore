@@ -32,7 +32,9 @@ def lux_node_header_draw(panel, context):
             NODE_MT_editor_menus.draw_collapsible(context, layout)
 
             # No shader nodes for Eevee lights
-            if snode_id and not (context.engine == 'BLENDER_EEVEE' and ob_type == 'LIGHT'):
+            if snode_id and (
+                context.engine != 'BLENDER_EEVEE' or ob_type != 'LIGHT'
+            ):
                 row = layout.row()
                 row.prop(snode_id, "use_nodes")
 
@@ -58,19 +60,6 @@ def lux_node_header_draw(panel, context):
             if id_from and ob_type != 'LIGHT':
                 row.template_ID(id_from, "active_material", new="material.new")
 
-        if snode.shader_type == 'WORLD':
-            NODE_MT_editor_menus.draw_collapsible(context, layout)
-
-            if snode_id:
-                row = layout.row()
-                row.prop(snode_id, "use_nodes")
-
-            layout.separator_spacer()
-
-            row = layout.row()
-            row.enabled = not snode.pin
-            row.template_ID(scene, "world", new="world.new")
-
         if snode.shader_type == 'LINESTYLE':
             view_layer = context.view_layer
             lineset = view_layer.freestyle_settings.linesets.active
@@ -87,6 +76,19 @@ def lux_node_header_draw(panel, context):
                 row = layout.row()
                 row.enabled = not snode.pin
                 row.template_ID(lineset, "linestyle", new="scene.freestyle_linestyle_new")
+
+        elif snode.shader_type == 'WORLD':
+            NODE_MT_editor_menus.draw_collapsible(context, layout)
+
+            if snode_id:
+                row = layout.row()
+                row.prop(snode_id, "use_nodes")
+
+            layout.separator_spacer()
+
+            row = layout.row()
+            row.enabled = not snode.pin
+            row.template_ID(scene, "world", new="world.new")
 
     elif snode.tree_type == 'TextureNodeTree':
         layout.prop(snode, "texture_type", text="")
@@ -128,14 +130,10 @@ def lux_node_header_draw(panel, context):
             else:
                 row.template_ID(snode, "node_tree", new="node.new_geometry_nodes_modifier")
 
-    ###########################################################################################
-    # Specialized LuxCore code
     elif snode.tree_type == "luxcore_material_nodes":
         NODE_MT_editor_menus.draw_collapsible(context, layout)
 
-        ob = context.object
-
-        if ob:
+        if ob := context.object:
             layout.separator_spacer()
             ob_type = ob.type
 
@@ -155,9 +153,6 @@ def lux_node_header_draw(panel, context):
 
             if mat and (not mat.luxcore.node_tree and not mat.luxcore.use_cycles_nodes):
                 layout.operator("luxcore.mat_nodetree_new", icon="NODETREE", text="Use LuxCore Material Nodes")
-    # End of specialized LuxCore code
-    ###########################################################################################
-
     else:
         # Custom node tree is edited as independent ID block
         NODE_MT_editor_menus.draw_collapsible(context, layout)

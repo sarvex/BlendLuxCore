@@ -21,16 +21,12 @@ class LuxCoreLightProps(bpy.types.PropertyGroup):
     def update_image(self, context):
         self.image_user.update(self.image)
 
-        if getattr(context, "light", None):
-            # For spot light (toggle projection mode)
-            if context.light.type == "SPOT":
-                context.light.use_square = self.image is not None
+        if getattr(context, "light", None) and context.light.type == "SPOT":
+            context.light.use_square = self.image is not None
 
     def update_is_laser(self, context):
-        if getattr(context, "light", None):
-            # For area light (laser can't be rectangular)
-            if self.is_laser:
-                context.light.shape = "SQUARE"
+        if getattr(context, "light", None) and self.is_laser:
+            context.light.shape = "SQUARE"
 
     use_cycles_settings: BoolProperty(name="Use Cycles Settings", default=False)
 

@@ -62,12 +62,13 @@ class LuxCoreNodeTexSmoke(LuxCoreNodeTexture, bpy.types.Node):
 
     def sub_export(self, exporter, depsgraph, props, luxcore_name=None, output_socket=None):
         start_time = time()
-        print("[Node Tree: %s][Smoke Domain: %s] Beginning smoke export of channel %s"
-              % (self.id_data.name, self.domain.name, output_socket.name))
+        print(
+            f"[Node Tree: {self.id_data.name}][Smoke Domain: {self.domain.name}] Beginning smoke export of channel {output_socket.name}"
+        )
 
         if not self.domain:
             error = "No Domain object selected."
-            msg = 'Node "%s" in tree "%s": %s' % (self.name, self.id_data.name, error)
+            msg = f'Node "{self.name}" in tree "{self.id_data.name}": {error}'
             LuxCoreErrorLog.add_warning(msg)
 
             definitions = {
@@ -139,15 +140,15 @@ class LuxCoreNodeTexSmoke(LuxCoreNodeTexture, bpy.types.Node):
 
 
         if output_socket.name == "color":
-            prop = pyluxcore.Property(prefix + "data3", [])
+            prop = pyluxcore.Property(f"{prefix}data3", [])
             # Omit every 4th element because the color_grid contains 4 values per cell
             # but LuxCore expects 3 values per cell (r, g, b)
             prop.AddAllFloat(grid, 3, 1)
         elif output_socket.name == "velocity":
-            prop = pyluxcore.Property(prefix + "data3", [])
+            prop = pyluxcore.Property(f"{prefix}data3", [])
             prop.AddAllFloat(grid)
         else:
-            prop = pyluxcore.Property(prefix + "data", [])
+            prop = pyluxcore.Property(f"{prefix}data", [])
             prop.AddAllFloat(grid)
 
         # We have to free the memory manually because the grid can be VERY large

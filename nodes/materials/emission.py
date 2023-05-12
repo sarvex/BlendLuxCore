@@ -151,10 +151,7 @@ class LuxCoreNodeMatEmission(LuxCoreNode, bpy.types.Node):
             definitions["emission.power"] = self.lumen / ( 2 * math.pi * (1 - math.cos(self.spread_angle/2)) )
             definitions["emission.efficency"] = 1.0
             definitions["emission.normalizebycolor"] = self.normalizebycolor
-            if self.lumen == 0 :
-                definitions["emission.gain"] = [0, 0, 0]
-            else:
-                definitions["emission.gain"] = [1, 1, 1]    
+            definitions["emission.gain"] = [0, 0, 0] if self.lumen == 0 else [1, 1, 1]
         elif self.emission_unit == "candela":
             if self.per_square_meter:
                 definitions["emission.power"] = 0.0
@@ -165,10 +162,7 @@ class LuxCoreNodeMatEmission(LuxCoreNode, bpy.types.Node):
                 definitions["emission.power"] = self.candela * math.pi
                 definitions["emission.efficency"] = 1.0
                 definitions["emission.normalizebycolor"] = self.normalizebycolor
-                if self.candela == 0:
-                    definitions["emission.gain"] = [0, 0, 0]
-                else:
-                    definitions["emission.gain"] = [1, 1, 1]
+                definitions["emission.gain"] = [0, 0, 0] if self.candela == 0 else [1, 1, 1]
         else:
             definitions["emission.power"] = 0
             definitions["emission.efficency"] = 0
@@ -187,7 +181,7 @@ class LuxCoreNodeMatEmission(LuxCoreNode, bpy.types.Node):
             try:
                 light.export_ies(definitions, self.ies, self.id_data.library, is_meshlight=True)
             except OSError as error:
-                msg = 'Node "%s" in tree "%s": %s' % (self.name, self.id_data.name, error)
+                msg = f'Node "{self.name}" in tree "{self.id_data.name}": {error}'
                 LuxCoreErrorLog.add_warning(msg)
 
     def sub_export(self, exporter, depsgraph, props, luxcore_name=None, output_socket=None):

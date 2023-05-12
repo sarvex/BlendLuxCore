@@ -20,15 +20,15 @@ def draw_persistent_file_ui(context, layout, settings):
     if not file_abspath:
         cache_status = "Cache file will not be saved"
     elif settings.save_or_overwrite:
-        if file_exists:
-            cache_status = "Cache file exists, but will be overwritten"
-        else:
-            cache_status = "Cache file will be saved"
+        cache_status = (
+            "Cache file exists, but will be overwritten"
+            if file_exists
+            else "Cache file will be saved"
+        )
+    elif file_exists:
+        cache_status = "Will use cache from file"
     else:
-        if file_exists:
-            cache_status = "Will use cache from file"
-        else:
-            cache_status = "No cache file available"
+        cache_status = "No cache file available"
 
     col = layout.column(align=True)
     col.prop(settings, "save_or_overwrite",
@@ -90,9 +90,11 @@ class LUXCORE_RENDER_PT_caches_photongi(RenderButtonsPanel, Panel):
 
         col = layout.column(align=True)
         col.prop(photongi, "debug")
-        if ((photongi.debug == "showindirect" or photongi.debug == "showindirectpathmix")
-                and not photongi.indirect_enabled) or (
-                photongi.debug == "showcaustic" and not photongi.caustic_enabled):
+        if (
+            photongi.debug in ["showindirect", "showindirectpathmix"]
+            and not photongi.indirect_enabled
+            or (photongi.debug == "showcaustic" and not photongi.caustic_enabled)
+        ):
             col.label(text="Can't show this cache (disabled)", icon=icons.WARNING)
 
 

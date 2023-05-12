@@ -13,5 +13,5 @@ class LuxCoreNodeTexUV(LuxCoreNodeTexture, bpy.types.Node):
         definitions = {
             "type": "uv",
         }
-        definitions.update(self.inputs["2D Mapping"].export(exporter, depsgraph, props))
+        definitions |= self.inputs["2D Mapping"].export(exporter, depsgraph, props)
         return self.create_props(props, definitions, luxcore_name)

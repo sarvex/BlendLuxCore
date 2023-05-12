@@ -104,16 +104,15 @@ class LUXCORE_LIGHT_PT_context_light(DataButtonsPanel, Panel):
 
         if light.type == "AREA" and light.luxcore.node_tree:
             col.label(text="Light color is defined by emission node", icon=icons.INFO)
-        else:
-            if light.luxcore.color_mode == "rgb":
-                col.prop(light.luxcore, "rgb_gain", text="Color Tint" if is_sunlight else "Color")
-            elif light.luxcore.color_mode == "temperature":
-                if is_sunlight:
-                    col.prop(light.luxcore, "temperature", slider=True, text="Temperature Tint")
-                else:
-                    col.prop(light.luxcore, "temperature", slider=True)
+        elif light.luxcore.color_mode == "rgb":
+            col.prop(light.luxcore, "rgb_gain", text="Color Tint" if is_sunlight else "Color")
+        elif light.luxcore.color_mode == "temperature":
+            if is_sunlight:
+                col.prop(light.luxcore, "temperature", slider=True, text="Temperature Tint")
             else:
-                raise Exception("Unknown color mode")
+                col.prop(light.luxcore, "temperature", slider=True)
+        else:
+            raise Exception("Unknown color mode")
 
         if is_sunlight:
             col = col.column(align=True)
@@ -121,7 +120,7 @@ class LUXCORE_LIGHT_PT_context_light(DataButtonsPanel, Panel):
             col.label(text="influenced by the sun light rotation")
 
         layout.separator()
-        
+
         col = layout.column(align=True)
         if light.type in {"POINT", "SPOT", "AREA"}:
             col.prop(light.luxcore, "light_unit")
@@ -130,21 +129,21 @@ class LUXCORE_LIGHT_PT_context_light(DataButtonsPanel, Panel):
             col.prop(light.luxcore, "power")
             col.prop(light.luxcore, "efficacy")
             col.prop(light.luxcore, "normalizebycolor")
-            
+
         elif light.luxcore.light_unit == "lumen" and light.type in {"POINT", "SPOT", "AREA"}:
             col.prop(light.luxcore, "lumen")
             col.prop(light.luxcore, "normalizebycolor")
-            
+
         elif light.luxcore.light_unit == "candela" and light.type in {"POINT", "SPOT", "AREA"}:
             col.prop(light.luxcore, "candela")
             if light.type == "AREA":
                 col.prop(light.luxcore, "per_square_meter")
             col.prop(light.luxcore, "normalizebycolor")
-            
+
         elif light.type == "SUN" and light.luxcore.light_type == "distant":
             col.prop(light.luxcore, "gain", text='Gain (Lux)')
             col.prop(light.luxcore, "exposure", slider=True)
-                
+
         else:
             col = layout.column(align=True)
             if light.type == "SUN" and light.luxcore.light_type == "sun":
@@ -152,7 +151,7 @@ class LUXCORE_LIGHT_PT_context_light(DataButtonsPanel, Panel):
             else:
                 col.prop(light.luxcore, "gain")
             col.prop(light.luxcore, "exposure", slider=True)
-                
+
             col = col.column(align=True)
             col.prop(light.luxcore, "normalizebycolor")
 
@@ -161,7 +160,7 @@ class LUXCORE_LIGHT_PT_context_light(DataButtonsPanel, Panel):
         # TODO: split this stuff into separate panels for each light type?
         if light.type == "POINT":
             layout.prop(light, "shadow_soft_size", text="Radius")                        
-            
+
             self.draw_image_controls(context)
 
         elif light.type == "SUN":
@@ -184,11 +183,10 @@ class LUXCORE_LIGHT_PT_context_light(DataButtonsPanel, Panel):
             self.draw_image_controls(context)
 
         elif light.type == "AREA":
+            col = layout.column(align=True)
             if light.luxcore.is_laser:
-                col = layout.column(align=True)
                 col.prop(light, "size", text="Size")
             else:
-                col = layout.column(align=True)
                 col.prop(light.luxcore, "visible")
                 col.prop(light.luxcore, "spread_angle", slider=True)
 
@@ -208,7 +206,7 @@ class LUXCORE_LIGHT_PT_context_light(DataButtonsPanel, Panel):
             layout.prop(light.luxcore, "is_laser")
 
         layout.separator()
-        
+
         col = layout.column(align=True)
         op = col.operator("luxcore.switch_space_data_context", text="Show Light Groups")
         op.target = "SCENE"
@@ -244,9 +242,7 @@ class LUXCORE_LIGHT_PT_volume(DataButtonsPanel, Panel):
             return False
 
         light = context.light
-        if not light or light.luxcore.use_cycles_settings:
-            return False
-        return True
+        return bool(light and not light.luxcore.use_cycles_settings)
 
     def draw_header(self, context):
         layout = self.layout

@@ -89,11 +89,14 @@ def convert(exporter, scene, context=None, engine=None):
             _add_output(definitions, "IRRADIANCE")
         if (final and aovs.albedo) or add_DENOISER_AOVs:
             _add_output(definitions, "ALBEDO")
-        if (final and aovs.avg_shading_normal) or add_DENOISER_AOVs:
-            # TODO: This AOV is temporarily disabled for OPTIX because of a bug that leads to
-            #  black squares in the result - re-enable when this is fixed in OptiX
-            if final or (context and scene.luxcore.viewport.get_denoiser(context) == "OIDN"):
-                _add_output(definitions, "AVG_SHADING_NORMAL")
+        if ((final and aovs.avg_shading_normal) or add_DENOISER_AOVs) and (
+            final
+            or (
+                context
+                and scene.luxcore.viewport.get_denoiser(context) == "OIDN"
+            )
+        ):
+            _add_output(definitions, "AVG_SHADING_NORMAL")
 
         pipeline_props = pyluxcore.Properties()
 
@@ -126,7 +129,10 @@ def convert(exporter, scene, context=None, engine=None):
                                                      pipeline_index, definitions, engine,
                                                      group_id, exporter.lightgroup_cache)
 
-            if not any([group.enabled for group in scene.luxcore.lightgroups.get_all_groups()]):
+            if not any(
+                group.enabled
+                for group in scene.luxcore.lightgroups.get_all_groups()
+            ):
                 LuxCoreErrorLog.add_warning("All light groups are disabled.")
 
             # Denoiser imagepipeline
@@ -149,25 +155,25 @@ def convert(exporter, scene, context=None, engine=None):
     except Exception as error:
         import traceback
         traceback.print_exc()
-        LuxCoreErrorLog.add_warning("AOVs: %s" % error)
+        LuxCoreErrorLog.add_warning(f"AOVs: {error}")
         return pyluxcore.Properties()
 
 
 @utils.count_index
 def _add_output(definitions, output_type_str, pipeline_index=-1, output_id=-1, index=0):
-    definitions[str(index) + ".type"] = output_type_str
+    definitions[f"{str(index)}.type"] = output_type_str
 
     filename = output_type_str
 
     if pipeline_index != -1:
-        definitions[str(index) + ".index"] = pipeline_index
-        filename += "_" + str(pipeline_index)
+        definitions[f"{str(index)}.index"] = pipeline_index
+        filename += f"_{str(pipeline_index)}"
 
     extension = ".png" if output_type_str in LDR_CHANNELS else ".exr"
-    definitions[str(index) + ".filename"] = filename + extension
+    definitions[f"{str(index)}.filename"] = filename + extension
 
     if output_id != -1:
-        definitions[str(index) + ".id"] = output_id
+        definitions[f"{str(index)}.id"] = output_id
 
     return index + 1
 
@@ -192,12 +198,14 @@ def _make_imagepipeline(props, context, scene, output_name, pipeline_index, outp
     if output_name == "RADIANCE_GROUP":
         for group_id in lightgroup_ids:
             # Disable all light groups except one per imagepipeline
-            definitions["radiancescales." + str(group_id) + ".enabled"] = (output_id == group_id)
+            definitions[f"radiancescales.{str(group_id)}.enabled"] = (
+                output_id == group_id
+            )
     else:
-        definitions[str(index) + ".type"] = "OUTPUT_SWITCHER"
-        definitions[str(index) + ".channel"] = output_name
+        definitions[f"{index}.type"] = "OUTPUT_SWITCHER"
+        definitions[f"{index}.channel"] = output_name
         if output_id != -1:
-            definitions[str(index) + ".index"] = output_id
+            definitions[f"{index}.index"] = output_id
         index += 1
 
     # Define the rest of the imagepipeline.
@@ -235,28 +243,28 @@ def get_denoiser_imgpipeline_props(context, scene, pipeline_index):
 
 def get_BCD_props(definitions, scene, index):
     denoiser = scene.luxcore.denoiser
-    definitions[str(index) + ".type"] = "BCD_DENOISER"
-    definitions[str(index) + ".scales"] = denoiser.scales
-    definitions[str(index) + ".histdistthresh"] = denoiser.hist_dist_thresh
-    definitions[str(index) + ".patchradius"] = denoiser.patch_radius
-    definitions[str(index) + ".searchwindowradius"] = denoiser.search_window_radius
-    definitions[str(index) + ".filterspikes"] = denoiser.filter_spikes
+    definitions[f"{str(index)}.type"] = "BCD_DENOISER"
+    definitions[f"{str(index)}.scales"] = denoiser.scales
+    definitions[f"{str(index)}.histdistthresh"] = denoiser.hist_dist_thresh
+    definitions[f"{str(index)}.patchradius"] = denoiser.patch_radius
+    definitions[f"{str(index)}.searchwindowradius"] = denoiser.search_window_radius
+    definitions[f"{str(index)}.filterspikes"] = denoiser.filter_spikes
     if scene.render.threads_mode == "FIXED":
-        definitions[str(index) + ".threadcount"] = scene.render.threads
+        definitions[f"{str(index)}.threadcount"] = scene.render.threads
     config = scene.luxcore.config
     if config.engine == "PATH" and config.use_tiles:
         epsilon = 0.1
         aa = config.tile.path_sampling_aa_size
-        definitions[str(index) + ".warmupspp"] = aa ** 2 - epsilon
+        definitions[f"{str(index)}.warmupspp"] = aa ** 2 - epsilon
     return index + 1
 
 
 def get_OIDN_props(definitions, scene, index):
     denoiser = scene.luxcore.denoiser
-    definitions[str(index) + ".type"] = "INTEL_OIDN"
-    definitions[str(index) + ".oidnmemory"] = denoiser.max_memory_MB
-    definitions[str(index) + ".sharpness"] = 0
-    definitions[str(index) + ".prefilter.enable"] = denoiser.prefilter_AOVs
+    definitions[f"{str(index)}.type"] = "INTEL_OIDN"
+    definitions[f"{str(index)}.oidnmemory"] = denoiser.max_memory_MB
+    definitions[f"{str(index)}.sharpness"] = 0
+    definitions[f"{str(index)}.prefilter.enable"] = denoiser.prefilter_AOVs
     return index + 1
 
 

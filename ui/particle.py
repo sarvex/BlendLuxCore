@@ -82,99 +82,98 @@ class LUXCORE_HAIR_PT_hair(ParticleButtonsPanel, Panel):
         layout.label(text="", icon_value=icon_manager.get_icon_id("logotype"))
 
     def draw(self, context):
-        layout = self.layout
-        settings = context.particle_settings.luxcore.hair
+         layout = self.layout
+         settings = context.particle_settings.luxcore.hair
 
-        layout.use_property_split = True
-        layout.use_property_decorate = False      
+         layout.use_property_split = True
+         layout.use_property_decorate = False      
 
-        # Note: we can always assume that obj.data has the attribute uv_textures,
-        # because objects that don't have it can't have a particle system in Blender.
-        # We can also assume that obj.data exists, because otherwise this panel is not visible.
-        obj = context.object
+         # Note: we can always assume that obj.data has the attribute uv_textures,
+         # because objects that don't have it can't have a particle system in Blender.
+         # We can also assume that obj.data exists, because otherwise this panel is not visible.
+         obj = context.object
 
-        layout.prop(settings, "hair_size")
+         layout.prop(settings, "hair_size")
 
-        col = layout.column(align=True)
-        col.prop(settings, "root_width")
-        col.prop(settings, "tip_width")
-        col.prop(settings, "width_offset")
+         col = layout.column(align=True)
+         col.prop(settings, "root_width")
+         col.prop(settings, "tip_width")
+         col.prop(settings, "width_offset")
 
-        layout.prop(settings, "tesseltype")
+         layout.prop(settings, "tesseltype")
 
-        if "adaptive" in settings.tesseltype:
-            col = layout.column(align=True)
-            col.prop(settings, "adaptive_maxdepth")
-            col.prop(settings, "adaptive_error")
+         if "adaptive" in settings.tesseltype:
+             col = layout.column(align=True)
+             col.prop(settings, "adaptive_maxdepth")
+             col.prop(settings, "adaptive_error")
 
-        if settings.tesseltype.startswith("solid"):
-            layout.prop(settings, "solid_sidecount")
+         if settings.tesseltype.startswith("solid"):
+             layout.prop(settings, "solid_sidecount")
 
-            col = layout.column(align=True)
-            col.prop(settings, "solid_capbottom")
-            col.prop(settings, "solid_captop")
+             col = layout.column(align=True)
+             col.prop(settings, "solid_capbottom")
+             col.prop(settings, "solid_captop")
 
-        layout.prop(settings, "copy_uv_coords")
+         layout.prop(settings, "copy_uv_coords")
 
-        # UV map selection
-        box = layout.box()
-        box.enabled = settings.copy_uv_coords or settings.export_color == "uv_texture_map"
-        col = box.column()
-        col.prop(settings, "use_active_uv_map")
+         # UV map selection
+         box = layout.box()
+         box.enabled = settings.copy_uv_coords or settings.export_color == "uv_texture_map"
+         col = box.column()
+         col.prop(settings, "use_active_uv_map")
 
-        if settings.use_active_uv_map:
-            if obj.data.uv_layers:
-                active_uv = utils.find_active_uv(obj.data.uv_layers)
-                if active_uv:
-                    row = col.row(align=True)
-                    row.label(text="UV Map")
-                    row.label(text=active_uv.name, icon="GROUP_UVS")
-        else:
-            col.prop_search(settings, "uv_map_name",
-                            obj.data, "uv_layers",
-                            icon="GROUP_UVS")
-
-        if not obj.data.uv_layers:
-            row = col.row()
-            row.label(text="No UV map", icon=icons.WARNING)
-            row.operator("mesh.uv_texture_add", icon=icons.ADD)
-
-        # Vertex color settings
-        box = layout.box()
-        box.prop(settings, "export_color")
-
-        if settings.export_color == "vertex_color":
-            col = box.column(align=True)
-            col.prop(settings, "use_active_vertex_color_layer")
-
-            if settings.use_active_vertex_color_layer:
-                if obj.data.vertex_colors:
-                    active_vcol_layer = utils.find_active_vertex_color_layer(obj.data.vertex_colors)
-                    if active_vcol_layer:
+         if settings.use_active_uv_map:
+              if obj.data.uv_layers:
+                   if active_uv := utils.find_active_uv(obj.data.uv_layers):
                         row = col.row(align=True)
-                        row.label(text="Vertex Colors")
-                        row.label(text=active_vcol_layer.name, icon="GROUP_VCOL")
-            else:
-                col.prop_search(settings, "vertex_color_layer_name",
-                                obj.data, "vertex_colors",
-                                icon="GROUP_VCOL", text="Vertex Colors")
+                        row.label(text="UV Map")
+                        row.label(text=active_uv.name, icon="GROUP_UVS")
+         else:
+              col.prop_search(settings, "uv_map_name",
+                              obj.data, "uv_layers",
+                              icon="GROUP_UVS")
 
-            if not obj.data.vertex_colors:
-                row = col.row()
-                row.label(text="No Vertex Colors", icon=icons.WARNING)
-                row.operator("mesh.vertex_color_add", icon=icons.ADD)
+         if not obj.data.uv_layers:
+             row = col.row()
+             row.label(text="No UV map", icon=icons.WARNING)
+             row.operator("mesh.uv_texture_add", icon=icons.ADD)
 
-        elif settings.export_color == "uv_texture_map":
-            box.template_ID(settings, "image", open="image.open")
-            if settings.image:
-                box.prop(settings, "gamma")
-            settings.image_user.draw(box, context.scene)
+         # Vertex color settings
+         box = layout.box()
+         box.prop(settings, "export_color")
 
-        col = box.column(align=True)
-        col.prop(settings, "root_color")
-        col.prop(settings, "tip_color")
+         if settings.export_color == "vertex_color":
+              col = box.column(align=True)
+              col.prop(settings, "use_active_vertex_color_layer")
 
-        layout.prop(settings, "instancing")
+              if settings.use_active_vertex_color_layer:
+                   if obj.data.vertex_colors:
+                        if active_vcol_layer := utils.find_active_vertex_color_layer(
+                            obj.data.vertex_colors):
+                             row = col.row(align=True)
+                             row.label(text="Vertex Colors")
+                             row.label(text=active_vcol_layer.name, icon="GROUP_VCOL")
+              else:
+                   col.prop_search(settings, "vertex_color_layer_name",
+                                   obj.data, "vertex_colors",
+                                   icon="GROUP_VCOL", text="Vertex Colors")
+
+              if not obj.data.vertex_colors:
+                  row = col.row()
+                  row.label(text="No Vertex Colors", icon=icons.WARNING)
+                  row.operator("mesh.vertex_color_add", icon=icons.ADD)
+
+         elif settings.export_color == "uv_texture_map":
+             box.template_ID(settings, "image", open="image.open")
+             if settings.image:
+                 box.prop(settings, "gamma")
+             settings.image_user.draw(box, context.scene)
+
+         col = box.column(align=True)
+         col.prop(settings, "root_color")
+         col.prop(settings, "tip_color")
+
+         layout.prop(settings, "instancing")
 
 
 class LUXCORE_PARTICLE_PT_textures(ParticleButtonsPanel, Panel):
@@ -184,13 +183,11 @@ class LUXCORE_PARTICLE_PT_textures(ParticleButtonsPanel, Panel):
 
     @classmethod
     def poll(cls, context):
-        psys = context.particle_system
-        engine = context.scene.render.engine
-        if psys is None:
-            return False
-        if psys.settings is None:
-            return False
-        return engine == "LUXCORE"
+         psys = context.particle_system
+         engine = context.scene.render.engine
+         if psys is None:
+             return False
+         return False if psys.settings is None else engine == "LUXCORE"
 
     def draw(self, context):
         layout = self.layout

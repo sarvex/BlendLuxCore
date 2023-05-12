@@ -12,12 +12,11 @@ from ..operators.manual_compatibility import LUXCORE_OT_convert_to_v23
 
 def _init_persistent_cache_file_path(settings, suffix):
     if not settings.file_path:
-        blend_name = utils.get_blendfile_name()
-        if blend_name:
-            pgi_path = "//" + blend_name + "." + suffix
+        if blend_name := utils.get_blendfile_name():
+            pgi_path = f"//{blend_name}.{suffix}"
         else:
             # Blend file was not saved yet
-            pgi_path = os.path.join(tempfile.gettempdir(), "Untitled." + suffix)
+            pgi_path = os.path.join(tempfile.gettempdir(), f"Untitled.{suffix}")
         settings.file_path = pgi_path
 
 

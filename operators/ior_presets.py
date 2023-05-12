@@ -70,10 +70,7 @@ class LuxCoreIORPresetValues():
                 ior_values[ior].append(index)
                 index += 1
         # Convert the dict to a sorted list of tuples
-        if sort == "value":
-            index = 1
-        else:
-            index = 0
+        index = 1 if sort == "value" else 0
         preset_list = []
         for item in sorted(ior_values.items(),
                            key=lambda e: e[1][index]):

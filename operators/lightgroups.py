@@ -197,10 +197,10 @@ def create_mixer(editor):
 
 
 def has_light_group_outputs(renderlayer_node):
-    for output in renderlayer_node.outputs:
-        if is_lightgroup_pass_name(output.name):
-            return True
-    return False
+    return any(
+        is_lightgroup_pass_name(output.name)
+        for output in renderlayer_node.outputs
+    )
 
 
 class LUXCORE_OT_create_lightgroup_nodes(bpy.types.Operator):
@@ -261,7 +261,7 @@ class LUXCORE_OT_create_lightgroup_nodes(bpy.types.Operator):
             self.report({"ERROR"}, "Create at least one custom light group, then press this button again.")
             return {"CANCELLED"}
 
-        if len(mixer_nodes) == 0:
+        if not mixer_nodes:
             #  Move render layer node to the left to make space for our setup
             renderlayer_node.location.x -= 500
 

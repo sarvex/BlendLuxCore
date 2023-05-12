@@ -74,14 +74,16 @@ def _view_camera(scene, context, definitions):
     camera = scene.camera
 
     if camera.type != "CAMERA":
-        raise Exception("%s Objects as cameras are not supported, use a CAMERA object" % camera.type)
+        raise Exception(
+            f"{camera.type} Objects as cameras are not supported, use a CAMERA object"
+        )
 
     lookat_orig, lookat_target, up_vector = _calc_lookat(camera.matrix_world, scene)
-    
+
     definitions["lookat.orig"] = lookat_orig
     definitions["lookat.target"] = lookat_target
     definitions["up"] = up_vector
-    
+
     # Magic zoom formula for camera viewport zoom from Cycles export code
     # %blender_root%\intern\cycles\blender\blender_camera.cpp, line 666ff
 
@@ -109,7 +111,9 @@ def _final(scene, definitions):
     camera = scene.camera
 
     if camera.type != "CAMERA":
-        raise Exception("%s Objects as cameras are not supported, use a CAMERA object" % camera.type)
+        raise Exception(
+            f"{camera.type} Objects as cameras are not supported, use a CAMERA object"
+        )
 
     lookat_orig, lookat_target, up_vector = _calc_lookat(camera.matrix_world, scene)
     definitions["lookat.orig"] = lookat_orig
@@ -148,21 +152,18 @@ def _depth_of_field(scene, definitions, context=None):
 
     if settings.use_autofocus:
         definitions["autofocus.enable"] = True
+    elif dof_obj := camera.data.dof.focus_object:
+        # Use distance along camera Z direction
+        cam_matrix = camera.matrix_world
+        lookat_orig = cam_matrix.to_translation()
+        lookat_target = cam_matrix @ Vector((0, 0, -1))
+
+        lookat_dir = (lookat_target - lookat_orig).normalized()
+        dof_dir = dof_obj.matrix_world.to_translation() - lookat_orig
+
+        definitions["focaldistance"] = abs(lookat_dir.dot(dof_dir))
     else:
-        dof_obj = camera.data.dof.focus_object
-
-        if dof_obj:
-            # Use distance along camera Z direction
-            cam_matrix = camera.matrix_world
-            lookat_orig = cam_matrix.to_translation()
-            lookat_target = cam_matrix @ Vector((0, 0, -1))
-
-            lookat_dir = (lookat_target - lookat_orig).normalized()
-            dof_dir = dof_obj.matrix_world.to_translation() - lookat_orig
-
-            definitions["focaldistance"] = abs(lookat_dir.dot(dof_dir))
-        else:
-            definitions["focaldistance"] = camera.data.dof.focus_distance
+        definitions["focaldistance"] = camera.data.dof.focus_distance
 
     bokeh = settings.bokeh
     if bokeh.non_uniform:
@@ -173,7 +174,7 @@ def _depth_of_field(scene, definitions, context=None):
         definitions["bokeh.distribution.type"] = distribution
         definitions["bokeh.blades"] = bokeh.blades
         definitions["bokeh.power"] = bokeh.power
-        
+
         anisotropy = bokeh.anisotropy
         if anisotropy > 0:
             x = 1
@@ -181,7 +182,7 @@ def _depth_of_field(scene, definitions, context=None):
         else:
             x = anisotropy + 1
             y = 1
-            
+
         definitions["bokeh.scale.x"] = x
         definitions["bokeh.scale.y"] = y
 
@@ -192,7 +193,7 @@ def _depth_of_field(scene, definitions, context=None):
                                                 scene)
                 definitions["bokeh.distribution.image"] = filepath
             except OSError as error:
-                LuxCoreErrorLog.add_warning("Camera: %s" % error)
+                LuxCoreErrorLog.add_warning(f"Camera: {error}")
                 definitions["bokeh.distribution.type"] = "UNIFORM"
 
 
@@ -217,7 +218,7 @@ def _clipping(scene, definitions):
             warning = "Clip start and clip end are exactly equal"
 
         if warning:
-            msg = 'Camera: %s' % warning
+            msg = f'Camera: {warning}'
             LuxCoreErrorLog.add_warning(msg, obj_name=camera.name)
 
 
@@ -280,9 +281,7 @@ def _get_volume_props(exporter, scene, depsgraph):
         return props
 
     cam_settings = scene.camera.data.luxcore
-    volume_node_tree = cam_settings.volume
-
-    if volume_node_tree:
+    if volume_node_tree := cam_settings.volume:
         luxcore_name = utils.get_luxcore_name(volume_node_tree)
         active_output = get_active_output(volume_node_tree)
 
@@ -290,7 +289,7 @@ def _get_volume_props(exporter, scene, depsgraph):
             active_output.export(exporter, depsgraph, props, luxcore_name)
             props.Set(pyluxcore.Property("scene.camera.volume", luxcore_name))
         except Exception as error:
-            msg = 'Camera: %s' % error
+            msg = f'Camera: {error}'
             LuxCoreErrorLog.add_warning(msg, obj_name=scene.camera.name)
 
     props.Set(pyluxcore.Property("scene.camera.autovolume.enable", cam_settings.auto_volume))

@@ -35,9 +35,7 @@ class LUXCORE_OBJECT_PT_object(ObjectButtonsPanel, Panel):
         col.prop(obj.luxcore, "visible_to_camera")
         col.prop(obj.luxcore, "exclude_from_render")
 
-        # Motion blur settings
-        cam = context.scene.camera
-        if cam:
+        if cam := context.scene.camera:
             motion_blur = cam.data.luxcore.motion_blur
             object_blur = motion_blur.enable and motion_blur.object_blur
 
@@ -52,7 +50,7 @@ class LUXCORE_OBJECT_PT_object(ObjectButtonsPanel, Panel):
         sub = col.column(align=True)
         sub.enabled = object_blur
         sub.prop(obj.luxcore, "enable_motion_blur")
-        
+
         # Instancing can cost performance, so inform the user when it happens
         if utils.use_obj_motion_blur(obj, context.scene):
             col.label(text="Object will be exported as instance", icon=icons.INFO)

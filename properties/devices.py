@@ -30,9 +30,9 @@ class LuxCoreDeviceSettings(PropertyGroup):
 
         for prefix in device_props.GetAllUniqueSubNames("opencl.device"):
             new = self.devices.add()
-            new.name = device_props.Get(prefix + ".name").GetString()
-            new.type = device_props.Get(prefix + ".type").GetString()
-            
+            new.name = device_props.Get(f"{prefix}.name").GetString()
+            new.type = device_props.Get(f"{prefix}.type").GetString()
+
             # Intel GPU devices can lead to crashes, so disable them by default
             if "intel" in new.name.lower():
                 new.enabled = False

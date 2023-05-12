@@ -70,7 +70,7 @@ class LuxCoreNodeTexBlenderMusgrave(LuxCoreNodeTexture, bpy.types.Node):
             "bright": self.bright,
             "contrast": self.contrast,
         }
-        definitions.update(self.inputs["3D Mapping"].export(exporter, depsgraph, props))
+        definitions |= self.inputs["3D Mapping"].export(exporter, depsgraph, props)
 
         if self.musgrave_type in ('ridged_multifractal', 'hybrid_multifractal', 'hetero_terrain'):
             definitions["offset"] = self.offset

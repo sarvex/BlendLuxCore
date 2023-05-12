@@ -15,15 +15,15 @@ class ColorRampItem(PropertyGroup):
 
     def update_add_keyframe(self, context):
         data_path = 'nodes["%s"].ramp_items[%d]' % (self.node_name, self.index)
-        self.id_data.keyframe_insert(data_path=data_path + ".offset")
-        self.id_data.keyframe_insert(data_path=data_path + ".value")
+        self.id_data.keyframe_insert(data_path=f"{data_path}.offset")
+        self.id_data.keyframe_insert(data_path=f"{data_path}.value")
         self["add_keyframe"] = False
         utils_node.force_viewport_update(self, context)
 
     def update_remove_keyframe(self, context):
         data_path = 'nodes["%s"].ramp_items[%d]' % (self.node_name, self.index)
-        self.id_data.keyframe_delete(data_path=data_path + ".offset")
-        self.id_data.keyframe_delete(data_path=data_path + ".value")
+        self.id_data.keyframe_delete(data_path=f"{data_path}.offset")
+        self.id_data.keyframe_delete(data_path=f"{data_path}.value")
         self["remove_keyframe"] = False
         utils_node.force_viewport_update(self, context)
 
@@ -124,12 +124,12 @@ class LuxCoreNodeTexBand(LuxCoreNodeTexture, bpy.types.Node):
 
             node_tree = self.id_data
             anim_data = node_tree.animation_data
+            fcurve_on_current_frame = False
+
             # Keyframes are attached to fcurves, which are attached to the parent node tree
             if anim_data and anim_data.action:
                 data_path = 'nodes["%s"].ramp_items[%d].offset' % (self.name, index)
                 fcurves = (fcurve for fcurve in anim_data.action.fcurves if fcurve.data_path == data_path)
-
-                fcurve_on_current_frame = False
 
                 for fcurve in fcurves:
                     for keyframe_point in fcurve.keyframe_points:
@@ -137,9 +137,6 @@ class LuxCoreNodeTexBand(LuxCoreNodeTexture, bpy.types.Node):
                         if frame == context.scene.frame_current:
                             fcurve_on_current_frame = True
                             break
-            else:
-                fcurve_on_current_frame = False
-
             if fcurve_on_current_frame:
                 sub = row.row(align=True)
                 # Highlight in red to show that a keyframe exists

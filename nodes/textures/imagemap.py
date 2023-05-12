@@ -124,10 +124,7 @@ class LuxCoreNodeTexImagemap(LuxCoreNodeTexture, bpy.types.Node):
         self.outputs["Bump"].enabled = False
 
     def draw_label(self):
-        if self.image:
-            return self.image.name
-        else:
-            return self.bl_label
+        return self.image.name if self.image else self.bl_label
 
     def draw_buttons(self, context, layout):
         if self.show_thumbnail:
@@ -170,18 +167,14 @@ class LuxCoreNodeTexImagemap(LuxCoreNodeTexture, bpy.types.Node):
 
     def sub_export(self, exporter, depsgraph, props, luxcore_name=None, output_socket=None):
         if self.image is None:
-            if self.is_normal_map:
-                return [0.5, 0.5, 1.0]
-            else:
-                return [0, 0, 0]
-
+            return [0.5, 0.5, 1.0] if self.is_normal_map else [0, 0, 0]
         if self.image.source == "SEQUENCE":
             frame_change_pre.have_to_check_node_trees = True
 
         try:
             filepath = ImageExporter.export(self.image, self.image_user, exporter.scene)
         except OSError as error:
-            msg = 'Node "%s" in tree "%s": %s' % (self.name, self.id_data.name, error)
+            msg = f'Node "{self.name}" in tree "{self.id_data.name}": {error}'
             LuxCoreErrorLog.add_warning(msg)
             return [1, 0, 1]
 
@@ -192,7 +185,7 @@ class LuxCoreNodeTexImagemap(LuxCoreNodeTexture, bpy.types.Node):
             "randomizedtiling.enable": self.wrap == "repeat" and self.randomized_tiling,
             "filter": self.filter,
         }
-        definitions.update(self.inputs["2D Mapping"].export(exporter, depsgraph, props))
+        definitions |= self.inputs["2D Mapping"].export(exporter, depsgraph, props)
 
         if self.is_normal_map:
             definitions.update({
@@ -208,10 +201,10 @@ class LuxCoreNodeTexImagemap(LuxCoreNodeTexture, bpy.types.Node):
             })
 
         luxcore_name = self.create_props(props, definitions, luxcore_name)
-        
+
         if self.projection == "box":
-            tex_name = luxcore_name + "_triplanar"
-            helper_prefix = "scene.textures." + tex_name + "."
+            tex_name = f"{luxcore_name}_triplanar"
+            helper_prefix = f"scene.textures.{tex_name}."
             helper_defs = {
                 "type": "triplanar",
                 "texture1": luxcore_name,
@@ -223,8 +216,8 @@ class LuxCoreNodeTexImagemap(LuxCoreNodeTexture, bpy.types.Node):
             luxcore_name = tex_name
 
         if self.is_normal_map:
-            tex_name = luxcore_name + "_normalmap"
-            helper_prefix = "scene.textures." + tex_name + "."
+            tex_name = f"{luxcore_name}_normalmap"
+            helper_prefix = f"scene.textures.{tex_name}."
             helper_defs = {
                 "type": "normalmap",
                 "texture": luxcore_name,
@@ -232,5 +225,5 @@ class LuxCoreNodeTexImagemap(LuxCoreNodeTexture, bpy.types.Node):
             }
             props.Set(utils.create_props(helper_prefix, helper_defs))
             luxcore_name = tex_name
-        
+
         return luxcore_name

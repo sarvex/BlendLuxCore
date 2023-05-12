@@ -55,7 +55,7 @@ class LuxCoreNodeTexTriplanarBump(LuxCoreNodeTexture, bpy.types.Node):
 
     def _create_bump_tex(self, suffix, value, height, props):
         tex_name = self.make_name() + suffix
-        prefix = "scene.textures." + tex_name + "."
+        prefix = f"scene.textures.{tex_name}."
         defs = {
             "type": "scale",
             "texture1": value,
@@ -88,7 +88,7 @@ class LuxCoreNodeTexTriplanarBump(LuxCoreNodeTexture, bpy.types.Node):
             "texture2": tex2,
             "texture3": tex3,
         }
-        definitions.update(self.inputs["3D Mapping"].export(exporter, depsgraph, props))
+        definitions |= self.inputs["3D Mapping"].export(exporter, depsgraph, props)
 
         if not utils_node.get_link(self.inputs["3D Mapping"]):
             definitions["mapping.type"] = "localmapping3d"

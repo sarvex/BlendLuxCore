@@ -19,5 +19,5 @@ class LuxCoreNodeTexCheckerboard3D(LuxCoreNodeTexture, bpy.types.Node):
             "texture1": self.inputs["Color 1"].export(exporter, depsgraph, props),
             "texture2": self.inputs["Color 2"].export(exporter, depsgraph, props),
         }
-        definitions.update(self.inputs["3D Mapping"].export(exporter, depsgraph, props))
+        definitions |= self.inputs["3D Mapping"].export(exporter, depsgraph, props)
         return self.create_props(props, definitions, luxcore_name)

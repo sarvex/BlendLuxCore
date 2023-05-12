@@ -7,7 +7,7 @@ from ..ui import icons
 
 
 def make_nodetree_name(material_name):
-    return "Nodes_" + material_name
+    return f"Nodes_{material_name}"
 
 
 def poll_node(context):
@@ -168,7 +168,7 @@ class LUXCORE_MT_node_tree:
                 col.label(text="No node trees available")
             else:
                 tree_type_pretty = tree_type.split("_")[1]
-                col.label(text="No " + tree_type_pretty + " node trees available")
+                col.label(text=f"No {tree_type_pretty} node trees available")
 
             if tree_type == "luxcore_material_nodetree":
                 col.operator("luxcore.mat_nodetree_new", text="New Node Tree", icon=icons.ADD)

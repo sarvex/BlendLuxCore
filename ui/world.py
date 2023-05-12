@@ -116,13 +116,14 @@ class LUXCORE_WORLD_PT_sky2(WorldButtonsPanel, Panel):
 
         layout.use_property_split = True
         layout.use_property_decorate = False
-        
-        layout.prop(world.luxcore, "sun")
-        sun = world.luxcore.sun
-        if sun:
-            is_really_a_sun = sun.type == "LIGHT" and sun.data and sun.data.type == "SUN"
 
-            if is_really_a_sun:
+        layout.prop(world.luxcore, "sun")
+        if sun := world.luxcore.sun:
+            if (
+                is_really_a_sun := sun.type == "LIGHT"
+                and sun.data
+                and sun.data.type == "SUN"
+            ):
                 layout.label(text="Using turbidity of sun light:", icon=icons.INFO)
                 layout.prop(sun.data.luxcore, "turbidity")
             else:

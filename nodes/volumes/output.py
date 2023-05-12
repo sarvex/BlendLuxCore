@@ -52,7 +52,7 @@ class LuxCoreNodeVolOutput(bpy.types.Node, LuxCoreNodeOutput):
                 col.label(text="lead to VERY long cache computation time!")
 
     def export(self, exporter, depsgraph, props, luxcore_name):
-        prefix = "scene.volumes." + luxcore_name + "."
+        prefix = f"scene.volumes.{luxcore_name}."
         definitions = {}
         # Invalidate node cache
         # TODO have one global properties object so this is no longer necessary
@@ -62,7 +62,7 @@ class LuxCoreNodeVolOutput(bpy.types.Node, LuxCoreNodeOutput):
             self.inputs["Volume"].export(exporter, depsgraph, props, luxcore_name)
         else:
             # We need a fallback (black volume)
-            msg = 'Node "%s" in tree "%s": No volume attached' % (self.name, self.id_data.name)
+            msg = f'Node "{self.name}" in tree "{self.id_data.name}": No volume attached'
             LuxCoreErrorLog.add_warning(msg)
 
             definitions["type"] = "clear"

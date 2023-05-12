@@ -45,13 +45,10 @@ class LUXCORE_PT_context_material(MaterialButtonsPanel, Panel):
         slot = context.material_slot
         space = context.space_data
 
-        # Re-create the Blender material UI, but without the surface/wire/volume/halo buttons        
+        # Re-create the Blender material UI, but without the surface/wire/volume/halo buttons
         if obj:
             is_sortable = len(obj.material_slots) > 1
-            rows = 1
-            if (is_sortable):
-                rows = 4
-
+            rows = 4 if is_sortable else 1
             row = layout.row()
 
             row.template_list("MATERIAL_UL_matslots", "", obj, "material_slots", obj, "active_material_index", rows=rows)
@@ -107,9 +104,9 @@ class LUXCORE_PT_material_presets(MaterialButtonsPanel, Panel):
 
     @classmethod
     def poll(cls, context):
-        engine = context.scene.render.engine
         if context.material and context.material.luxcore.use_cycles_nodes:
             return False
+        engine = context.scene.render.engine
         return engine == "LUXCORE"
 
     def draw(self, context):

@@ -21,7 +21,7 @@ class LuxCoreNodeTexTimeInfo(LuxCoreNodeTexture, bpy.types.Node):
         hours, minutes = divmod(minutes, 60)
 
         col = layout.column(align=True)
-        col.label(text='Frame: %s' % (scene.frame_current))
+        col.label(text=f'Frame: {scene.frame_current}')
         col = layout.column(align=True)
         col.label(text='Time: %02d:%02d:%02d.%03d' % (hours, minutes, seconds, milliseconds))
 

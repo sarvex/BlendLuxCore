@@ -19,9 +19,8 @@ class StringCache:
             self.props = new_props
             return True
 
-        has_changes = props_str != new_props_str
         self.props = new_props
-        return has_changes
+        return props_str != new_props_str
 
 
 class CameraCache:
@@ -35,15 +34,7 @@ class CameraCache:
     def diff(self, exporter, scene, depsgraph, context):
         # String cache
         camera_props = camera.convert(exporter, scene, depsgraph, context)
-        has_changes = self.string_cache.diff(camera_props)
-
-        # Check camera object and data for changes
-        # Needed in case the volume node tree was relinked/unlinked
-        # TODO 2.8
-        # if scene.camera and (scene.camera.is_updated or scene.camera.is_updated_data):
-        #     return True
-
-        return has_changes
+        return self.string_cache.diff(camera_props)
 
 
 class MaterialCache:

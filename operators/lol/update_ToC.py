@@ -49,7 +49,7 @@ class LOLUpdateTOC(Operator):
         user_preferences = context.preferences.addons[name].preferences
 
         filepath = join(user_preferences.global_dir, 'assets_model_blendermarket.json')
-        urlstr = utils.LOL_HOST_URL + "/" + utils.LOL_VERSION + "/assets_model_blendermarket.json"
+        urlstr = f"{utils.LOL_HOST_URL}/{utils.LOL_VERSION}/assets_model_blendermarket.json"
         with urllib.request.urlopen(urlstr, timeout=60) as request:
             assets = json.load(request)
 
@@ -57,7 +57,7 @@ class LOLUpdateTOC(Operator):
                 file.write(json.dumps(assets, indent=2))
 
         filepath = join(user_preferences.global_dir, 'assets_model.json')
-        urlstr = utils.LOL_HOST_URL + "/" + utils.LOL_VERSION + "/assets_model.json"
+        urlstr = f"{utils.LOL_HOST_URL}/{utils.LOL_VERSION}/assets_model.json"
         with urllib.request.urlopen(urlstr, timeout=60) as request:
             assets = json.load(request)
 
@@ -65,7 +65,7 @@ class LOLUpdateTOC(Operator):
                 file.write(json.dumps(assets, indent=2))
 
         filepath = join(user_preferences.global_dir, 'assets_material.json')
-        urlstr = utils.LOL_HOST_URL + "/" + utils.LOL_VERSION + "/assets_material.json"
+        urlstr = f"{utils.LOL_HOST_URL}/{utils.LOL_VERSION}/assets_material.json"
         with urllib.request.urlopen(urlstr, timeout=60) as request:
             assets = json.load(request)
 

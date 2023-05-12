@@ -38,7 +38,7 @@ def check_for_normalmap_slow(image):
     # Just assume that the image is at least 100x100
     pixel_count = image.size[0] * image.size[1]
 
-    for i in range(TEST_PIXEL_COUNT):
+    for _ in range(TEST_PIXEL_COUNT):
         index = randint(0, pixel_count - 1)
         normal = get_normal(image.pixels, index)
         length = normal.length_squared
@@ -95,7 +95,7 @@ class LUXCORE_OT_import_multiple_images(bpy.types.Operator, ImportHelper):
                 elif self.detect_normalmaps_slow and check_for_normalmap_slow(image):
                     node.is_normal_map = True
             else:
-                self.report({"ERROR"}, "Failed: " + file_elem.name)
+                self.report({"ERROR"}, f"Failed: {file_elem.name}")
                 print("ERROR: Could not import", filepath)
 
         return {'FINISHED'}

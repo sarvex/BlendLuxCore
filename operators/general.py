@@ -147,13 +147,14 @@ class LUXCORE_OT_add_node(bpy.types.Operator):
         offset_x = new_node.width + 50
         new_node.location = (node.location.x - offset_x, node.location.y - 100)
 
-        # Link
-        output = 0
-        for out in new_node.outputs:
-            if out.bl_idname == self.socket_type:
-                output = out.name
-                break
-
+        output = next(
+            (
+                out.name
+                for out in new_node.outputs
+                if out.bl_idname == self.socket_type
+            ),
+            0,
+        )
         node_tree.links.new(new_node.outputs[output], node.inputs[self.input_socket])
 
         # Special stuff only needed by material output
@@ -227,8 +228,8 @@ class LUXCORE_OT_open_website_popup(bpy.types.Operator):
     url: StringProperty()
 
     def draw(self, context):
-        layout = self.layout
         if self.message:
+            layout = self.layout
             layout.label(text=self.message)
 
     def invoke(self, context, event):

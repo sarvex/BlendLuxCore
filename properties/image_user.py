@@ -61,18 +61,13 @@ class LuxCoreImageUser(PropertyGroup):
 
     def update(self, image):
         """ This function should be called on each image update """
-        if image and self.image != image:
-            # A new or different image was linked,
-            # auto-detect sequence length and first frame offset
-            if image.source == "SEQUENCE":
-                indexed_filepaths = utils.image_sequence_resolve_all(image)
-
-                if indexed_filepaths:
-                    first_index, first_path = indexed_filepaths[0]
-                    frame_count = len(indexed_filepaths)
-                    self.first_frame = 1
-                    self.last_frame = frame_count
-                    self.frame_offset = -first_index + 1
+        if image and self.image != image and image.source == "SEQUENCE":
+            if indexed_filepaths := utils.image_sequence_resolve_all(image):
+                first_index, first_path = indexed_filepaths[0]
+                frame_count = len(indexed_filepaths)
+                self.first_frame = 1
+                self.last_frame = frame_count
+                self.frame_offset = -first_index + 1
         self.image = image
 
     def get_frame(self, scene):

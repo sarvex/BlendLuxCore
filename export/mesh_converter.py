@@ -8,11 +8,7 @@ from ..utils.errorlog import LuxCoreErrorLog
 
 def fast_custom_normals_supported():
     version = bpy.app.version
-    if version == (2, 82, 7):
-        return True
-    if version[:2] == (2, 83):
-        return True
-    return False
+    return True if version == (2, 82, 7) else version[:2] == (2, 83)
 
 
 def get_custom_normals_slow(mesh):
@@ -43,11 +39,11 @@ def get_custom_normals_slow(mesh):
 
 def convert(obj, mesh_key, depsgraph, luxcore_scene, is_viewport_render, use_instancing, transform, exporter=None):
     start_time = time()
-    
+
     with _prepare_mesh(obj, depsgraph) as mesh:
         if mesh is None:
             return None
-        
+
         custom_normals = None
         if mesh.has_custom_normals and not fast_custom_normals_supported():
             start = time()
@@ -90,10 +86,10 @@ def convert(obj, mesh_key, depsgraph, luxcore_scene, is_viewport_render, use_ins
 
         meshPtr = mesh.as_pointer()
         if 'material_index' in  mesh.attributes:
-            material_indices = list([i.value for i in mesh.attributes['material_index'].data])
+            material_indices = [i.value for i in mesh.attributes['material_index'].data]
         else:
-            material_indices = list([p.material_index for p in mesh.polygons])
-        
+            material_indices = [p.material_index for p in mesh.polygons]
+
         material_count = max(1, len(mesh.materials))
 
         if is_viewport_render or use_instancing:

@@ -13,8 +13,8 @@ def _show_openCL_device_warning(context):
     cpu_devices = [device for device in devices.devices if device.type == "OPENCL_CPU"]
     other_devices = set(devices.devices) - (set(gpu_devices) | set(cpu_devices))
 
-    has_gpus = any([device.enabled for device in gpu_devices])
-    has_others = any([device.enabled for device in other_devices])
+    has_gpus = any(device.enabled for device in gpu_devices)
+    has_others = any(device.enabled for device in other_devices)
 
     return (config.engine == "PATH" and config.device == "OCL" and not has_gpus and not has_others)
 

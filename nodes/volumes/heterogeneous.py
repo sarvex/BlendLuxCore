@@ -93,7 +93,7 @@ class LuxCoreNodeVolHeterogeneous(LuxCoreNodeVolume, bpy.types.Node):
             smoke_domain_mod = utils.find_smoke_domain_modifier(domain_eval)
 
             if smoke_domain_mod is None:
-                msg = 'Object "%s" is not a smoke domain' % domain_eval.name
+                msg = f'Object "{domain_eval.name}" is not a smoke domain'
                 raise Exception(msg)
 
             settings = smoke_domain_mod.domain_settings
@@ -102,11 +102,10 @@ class LuxCoreNodeVolHeterogeneous(LuxCoreNodeVolume, bpy.types.Node):
             if bpy.app.version[:2] < (2, 82):
                 if settings.use_high_resolution:
                     resolutions = [res * (settings.amplify + 1) for res in resolutions]
-            else:
-                if settings.use_noise:
-                    resolutions = [res * settings.noise_scale for res in resolutions]
+            elif settings.use_noise:
+                resolutions = [res * settings.noise_scale for res in resolutions]
 
-            dimensions = [dim for dim in domain_eval.dimensions]
+            dimensions = list(domain_eval.dimensions)
 
             # The optimal step size on each axis
             step_sizes = [dim / res for dim, res in zip(dimensions, resolutions)]
@@ -119,7 +118,9 @@ class LuxCoreNodeVolHeterogeneous(LuxCoreNodeVolume, bpy.types.Node):
             worst_case_maxcount = math.ceil(diagonal / step_size)
             definitions["steps.maxcount"] = worst_case_maxcount
 
-            print('INFO: "%s" in volume node tree "%s" Auto Step Settings:' % (self.name, self.id_data.name))
+            print(
+                f'INFO: "{self.name}" in volume node tree "{self.id_data.name}" Auto Step Settings:'
+            )
             print("  Using steps.size = %.3f m" % step_size)
             print("  Using steps.maxcount =", worst_case_maxcount)
         else:

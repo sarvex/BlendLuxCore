@@ -37,7 +37,7 @@ class LUXCORE_OT_install_pyside(bpy.types.Operator):
             + 'exec $SHELL'
             + "'"
         )
-        run(["x-terminal-emulator", "-e", "bash -c " + script])
+        run(["x-terminal-emulator", "-e", f"bash -c {script}"])
         return {"FINISHED"}
 
 
@@ -105,14 +105,14 @@ class LUXCORE_OT_start_pyluxcoretools(bpy.types.Operator):
         # Set the current working directory to the bin folder so pyluxcore is found
         kwargs.update(cwd=bin_dir)
 
-        if (platform.system() == "Linux") or (platform.system() == "Darwin"):
+        if platform.system() in ["Linux", "Darwin"]:
             zip_path = os.path.join(bin_dir, "pyluxcoretools.zip")
             command = ["python3", zip_path]
         elif platform.system() == "Windows":
             exe_path = os.path.join(bin_dir, "pyluxcoretool.exe")
             command = exe_path
         else:
-            raise NotImplementedError("Unsupported system: " + platform.system())
+            raise NotImplementedError(f"Unsupported system: {platform.system()}")
 
         Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE, env=my_env, **kwargs)
 

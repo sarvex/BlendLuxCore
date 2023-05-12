@@ -52,11 +52,7 @@ class LUXCORE_OT_render_settings_helper(bpy.types.Operator):
         config.sampler_gpu = "SOBOL"
         config.sobol_adaptive_strength = 0.9
 
-        if self._use_GPU():
-            config.device = "OCL"
-        else:
-            config.device = "CPU"
-
+        config.device = "OCL" if self._use_GPU() else "CPU"
         settings.denoiser.enabled = True
         settings.denoiser.type = "OIDN"
 

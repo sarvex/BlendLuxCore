@@ -85,7 +85,7 @@ def build_name(prefix, version_string, suffix):
 
 def build_zip_name(version_string, suffix):
     suffix_without_extension = suffix.replace(".tar.bz2", "").replace(".zip", "").replace(".tar.gz", "").replace(".dmg", "")
-    return "BlendLuxCore-" + version_string + suffix_without_extension
+    return f"BlendLuxCore-{version_string}{suffix_without_extension}"
 
 
 def extract_files_from_tar(tar_path, files_to_extract, destination):
@@ -99,20 +99,20 @@ def extract_files_from_tar(tar_path, files_to_extract, destination):
     print("Reading tar file:", tar_path)
 
     tar_type = os.path.splitext(tar_path)[1][1:]
-    with tarfile.open(tar_path, "r:" + tar_type) as tar:
+    with tarfile.open(tar_path, f"r:{tar_type}") as tar:
         for member in tar.getmembers():
             basename = os.path.basename(member.name)
             if basename not in files_to_extract:
                 continue
 
             # have to use a temp dir (weird extract behaviour)
-            print('Extracting "%s" to "%s"' % (basename, temp_dir))
+            print(f'Extracting "{basename}" to "{temp_dir}"')
             tar.extract(member, path=temp_dir)
             src = os.path.join(temp_dir, member.name)
 
             # move to real target directory
             dst = os.path.join(destination, basename)
-            print('Moving "%s" to "%s"' % (src, dst))
+            print(f'Moving "{src}" to "{dst}"')
             if not os.path.isfile(dst):
                 shutil.move(src, dst)
 
@@ -136,12 +136,12 @@ def extract_files_from_zip(zip_path, files_to_extract, destination):
                 continue
 
             # have to use a temp dir (weird extract behaviour)
-            print('Extracting "%s" to "%s"' % (basename, temp_dir))
+            print(f'Extracting "{basename}" to "{temp_dir}"')
             src = zip.extract(member, path=temp_dir)
 
             # move to real target directory
             dst = os.path.join(destination, basename)
-            print('Moving "%s" to "%s"' % (src, dst))
+            print(f'Moving "{src}" to "{dst}"')
             shutil.move(src, dst)
 
     rmtree(temp_dir)
@@ -152,8 +152,8 @@ def extract_files_from_dmg(dmg_path, files_to_extract, destination):
     print("Extracting dmg file:", dmg_path)
     vol_name = dmg_path.replace(".dmg", "")
     for f in files_to_extract:
-        print('Extracting "%s" to "%s"' % (f, destination))
-        cmd = ("7z e -o" + destination + " " + dmg_path + " " + vol_name + "/pyluxcore/" + f)
+        print(f'Extracting "{f}" to "{destination}"')
+        cmd = f"7z e -o{destination} {dmg_path} {vol_name}/pyluxcore/{f}"
         print(cmd)
         os.system(cmd)
 
@@ -241,11 +241,11 @@ def main():
 
         # Check if file already downloaded
         if name in os.listdir(script_dir):
-            print('File already downloaded: "%s"' % name)
+            print(f'File already downloaded: "{name}"')
         else:
             destination = os.path.join(script_dir, name)
             url = url_prefix + args.version_string + "/" + name
-            print('Downloading: "%s"' % url)
+            print(f'Downloading: "{url}"')
 
             try:
                 urllib.request.urlretrieve(url, destination)
@@ -267,7 +267,7 @@ def main():
     repo_path = os.path.join(script_dir, "BlendLuxCore")
     if os.path.exists(repo_path):
         # Clone fresh because we delete some stuff after cloning
-        print('Destinaton already exists, deleting it: "%s"' % repo_path)
+        print(f'Destinaton already exists, deleting it: "{repo_path}"')
         rmtree(repo_path)
 
     clone_args = ["git", "clone", "https://github.com/LuxCoreRender/BlendLuxCore.git"]
@@ -284,10 +284,10 @@ def main():
     tags_raw = subprocess.check_output(["git", "tag", "-l"])
     tags = [tag.decode("utf-8") for tag in tags_raw.splitlines()]
 
-    current_version_tag = "blendluxcore_" + args.version_string
+    current_version_tag = f"blendluxcore_{args.version_string}"
     if current_version_tag in tags:
         print("Checking out tag", current_version_tag)
-        subprocess.check_output(["git", "checkout", "tags/" + current_version_tag])
+        subprocess.check_output(["git", "checkout", f"tags/{current_version_tag}"])
 
     os.chdir("..")
 
@@ -310,7 +310,7 @@ def main():
     for suffix in suffixes:
         name = build_zip_name(args.version_string, suffix)
         destination = os.path.join(script_dir, name, "BlendLuxCore")
-        print('Creating "%s"' % destination)
+        print(f'Creating "{destination}"')
 
         if os.path.exists(destination):
             print("(Already exists, cleaning it)")
@@ -325,7 +325,7 @@ def main():
 
     # Check if file already downloaded
     if OIDN_LINUX in os.listdir(script_dir):
-        print('File already downloaded: "%s"' % OIDN_LINUX)
+        print(f'File already downloaded: "{OIDN_LINUX}"')
     else:
         destination = os.path.join(script_dir, OIDN_LINUX)
         try:
@@ -365,7 +365,7 @@ def main():
     print("Packaging BlendLuxCore releases")
     print_divider()
 
-    release_dir = os.path.join(script_dir, "release-" + args.version_string)
+    release_dir = os.path.join(script_dir, f"release-{args.version_string}")
     if os.path.exists(release_dir):
         rmtree(release_dir)
     os.mkdir(release_dir)
@@ -374,15 +374,15 @@ def main():
         name = build_zip_name(args.version_string, suffix)
         zip_this = os.path.join(script_dir, name)
         print("Zipping:", name)
-        zip_name = name + ".zip"
+        zip_name = f"{name}.zip"
 
         shutil.make_archive(name, 'zip', zip_this)
 
-        shutil.move(zip_this + ".zip", os.path.join(release_dir, zip_name))
+        shutil.move(f"{zip_this}.zip", os.path.join(release_dir, zip_name))
 
     print()
     print_divider()
-    print("Results can be found in: " + release_dir)
+    print(f"Results can be found in: {release_dir}")
     print_divider()
 
 

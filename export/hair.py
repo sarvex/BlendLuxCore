@@ -10,18 +10,22 @@ from ..utils.errorlog import LuxCoreErrorLog
 
 
 def find_psys_modifier(obj, psys):
-    for mod in obj.modifiers:
-        if mod.type == "PARTICLE_SYSTEM" and mod.particle_system.name == psys.name:
-            return mod
-    return None
+    return next(
+        (
+            mod
+            for mod in obj.modifiers
+            if mod.type == "PARTICLE_SYSTEM"
+            and mod.particle_system.name == psys.name
+        ),
+        None,
+    )
 
 
 def convert_uvs(obj, psys, settings, uv_textures, engine, strands_count, start, dupli_count, mod, num_children):
     failure = np.empty(shape=0, dtype=np.float32)
 
     if settings.use_active_uv_map or settings.uv_map_name not in obj.data.uv_layers:
-        active_uv = utils.find_active_uv(uv_textures)
-        if active_uv:
+        if active_uv := utils.find_active_uv(uv_textures):
             uv_index = uv_textures.find(active_uv.name)
         else:
             uv_index = -1
@@ -37,21 +41,31 @@ def convert_uvs(obj, psys, settings, uv_textures, engine, strands_count, start, 
 
     first_particle = psys.particles[0]
     f = psys.uv_on_emitter
-    uvs = np.fromiter((elem
-                       for i in range(start, dupli_count)
-                       for elem in f(mod, particle=psys.particles[i] if num_children == 0 else first_particle,
-                                     particle_no=i, uv_no=uv_index)),
-                      dtype=np.float32,
-                      count=(dupli_count - start) * 2)
-    return uvs
+    return np.fromiter(
+        (
+            elem
+            for i in range(start, dupli_count)
+            for elem in f(
+                mod,
+                particle=psys.particles[i]
+                if num_children == 0
+                else first_particle,
+                particle_no=i,
+                uv_no=uv_index,
+            )
+        ),
+        dtype=np.float32,
+        count=(dupli_count - start) * 2,
+    )
 
 
 def convert_colors(obj, psys, settings, vertex_colors, engine, strands_count, start, dupli_count, mod, num_children):
     failure = np.empty(shape=0, dtype=np.float32)
 
     if settings.use_active_vertex_color_layer or settings.vertex_color_layer_name not in vertex_colors:
-        active_vertex_color_layer = utils.find_active_vertex_color_layer(vertex_colors)
-        if active_vertex_color_layer:
+        if active_vertex_color_layer := utils.find_active_vertex_color_layer(
+            vertex_colors
+        ):
             vertex_color_index = vertex_colors.find(active_vertex_color_layer.name)
         else:
             vertex_color_index = -1
@@ -67,13 +81,20 @@ def convert_colors(obj, psys, settings, vertex_colors, engine, strands_count, st
 
     first_particle = psys.particles[0]
     f = psys.mcol_on_emitter
-    colors = np.fromiter((elem
-                          for i in range(start, dupli_count)
-                          for elem in f(mod, psys.particles[i] if num_children == 0 else first_particle,
-                                        particle_no= i, vcol_no=vertex_color_index)),
-                         dtype=np.float32,
-                         count=(dupli_count - start) * 3)
-    return colors
+    return np.fromiter(
+        (
+            elem
+            for i in range(start, dupli_count)
+            for elem in f(
+                mod,
+                psys.particles[i] if num_children == 0 else first_particle,
+                particle_no=i,
+                vcol_no=vertex_color_index,
+            )
+        ),
+        dtype=np.float32,
+        count=(dupli_count - start) * 3,
+    )
 
 
 def warn_about_missing_uvs(obj, node_tree):
@@ -95,7 +116,7 @@ def convert_hair(exporter, obj, obj_key, psys, depsgraph, luxcore_scene, scene_p
 
         mod = find_psys_modifier(obj, psys)
 
-        msg = "[%s: %s] Exporting hair" % (obj.name, psys.name)
+        msg = f"[{obj.name}: {psys.name}] Exporting hair"
         print(msg)
         if engine:
             engine.update_stats('Exporting...', msg)
@@ -217,24 +238,31 @@ def convert_hair(exporter, obj, obj_key, psys, depsgraph, luxcore_scene, scene_p
 
 def set_hair_props(scene_props, lux_obj, lux_shape, lux_mat, visible_to_camera,
                    is_for_duplication, instance_matrix_world, use_instancing):
-    prefix = "scene.objects." + lux_obj + "."
+    prefix = f"scene.objects.{lux_obj}."
 
-    scene_props.Set(pyluxcore.Property(prefix + "material", lux_mat))
-    scene_props.Set(pyluxcore.Property(prefix + "shape", lux_shape))
-    scene_props.Set(pyluxcore.Property(prefix + "camerainvisible", not visible_to_camera))
+    scene_props.Set(pyluxcore.Property(f"{prefix}material", lux_mat))
+    scene_props.Set(pyluxcore.Property(f"{prefix}shape", lux_shape))
+    scene_props.Set(
+        pyluxcore.Property(f"{prefix}camerainvisible", not visible_to_camera)
+    )
 
     if is_for_duplication:
-        scene_props.Set(pyluxcore.Property(prefix + "transformation", utils.matrix_to_list(instance_matrix_world)))
+        scene_props.Set(
+            pyluxcore.Property(
+                f"{prefix}transformation",
+                utils.matrix_to_list(instance_matrix_world),
+            )
+        )
     elif use_instancing:
         # We don't actually need to transform anything, just set an identity matrix so the mesh is instanced
         identity_matrix = utils.matrix_to_list(Matrix.Identity(4))
-        scene_props.Set(pyluxcore.Property(prefix + "transformation", identity_matrix))
+        scene_props.Set(pyluxcore.Property(f"{prefix}transformation", identity_matrix))
 
 
 def make_hair_shape_name(obj_key, psys):
     # Can't use the memory address of the psys as key because it changes
     # when the psys is updated (e.g. because some hair moves)
-    return obj_key + "_" + utils.sanitize_luxcore_name(psys.name)
+    return f"{obj_key}_{utils.sanitize_luxcore_name(psys.name)}"
 
 
 def get_hair_material_index(psys):

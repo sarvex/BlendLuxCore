@@ -33,14 +33,14 @@ def draw_panel_categories(self, context):
     scene = context.scene
     ui_props = scene.luxcoreOL.ui
 
-    if ui_props.asset_type == 'MODEL':
-        asset_props = scene.luxcoreOL.model
-    if ui_props.asset_type == 'SCENE':
-        asset_props = scene.luxcoreOL.scene
     if ui_props.asset_type == 'MATERIAL':
         asset_props = scene.luxcoreOL.material
 
-    if not 'categories' in asset_props.keys():
+    elif ui_props.asset_type == 'MODEL':
+        asset_props = scene.luxcoreOL.model
+    elif ui_props.asset_type == 'SCENE':
+        asset_props = scene.luxcoreOL.scene
+    if 'categories' not in asset_props.keys():
         return
 
     categories = asset_props['categories']
@@ -227,13 +227,13 @@ class VIEW3D_PT_LUXCORE_ONLINE_LIBRARY_DOWNLOADS(Panel):
         layout = self.layout
 
         for idx, threaddata in enumerate(utils.download_threads):
-           tcom = threaddata[2]
-           asset_data = threaddata[1]
+            tcom = threaddata[2]
+            asset_data = threaddata[1]
 
-           row = layout.row()
-           row.label(text=asset_data['name'])
-           row.label(text=str(int(tcom.progress)) + ' %')
-           row.operator('scene.luxcore_ol_download_kill', text='', icon='CANCEL').thread_index = idx
+            row = layout.row()
+            row.label(text=asset_data['name'])
+            row.label(text=f'{int(tcom.progress)} %')
+            row.operator('scene.luxcore_ol_download_kill', text='', icon='CANCEL').thread_index = idx
 
            # TODO: Implement retry download
            # if tcom.passargs.get('retry_counter', 0) > 0:
@@ -267,13 +267,9 @@ class VIEW3D_PT_LUXCORE_ONLINE_LIBRARY_LOCAL(Panel):
         ui_props = context.scene.luxcoreOL.ui
 
         if ui_props.asset_type == "MATERIAL":
-            obj = context.active_object
-            if obj:
+            if obj := context.active_object:
                 is_sortable = len(obj.material_slots) > 1
-                rows = 1
-                if (is_sortable):
-                    rows = 4
-
+                rows = 4 if is_sortable else 1
                 col = layout.column(align=True)
                 col.label(text="Material:")
                 col = layout.column(align=True)
@@ -328,7 +324,7 @@ class VIEW3D_PT_LUXCORE_ONLINE_LIBRARY_SCAN_RESULT(Panel):
     bl_order = 3
 
     @classmethod
-    def poll(self, context):
+    def poll(cls, context):
         user_preferences = get_addon_preferences(context)
 
         return len(context.scene.luxcoreOL.upload.add_list) > 0 and user_preferences.use_library

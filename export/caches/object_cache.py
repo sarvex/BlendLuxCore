@@ -36,19 +36,24 @@ def uses_random_per_island_uniform_float(node_tree):
 
 
 def uses_random_per_island_int(node_tree):
-    # TODO better check would be if the node is linked to the output and actually used
-    for node in utils_node.find_nodes_multi(node_tree, {"LuxCoreNodeTexMapping2D", "LuxCoreNodeTexMapping3D"}, True):
-        if node.mapping_type in {"uvrandommapping2d", "localrandommapping3d"} and node.seed_type == "mesh_islands":
-            return True
-    return False
+    return any(
+        node.mapping_type in {"uvrandommapping2d", "localrandommapping3d"}
+        and node.seed_type == "mesh_islands"
+        for node in utils_node.find_nodes_multi(
+            node_tree,
+            {"LuxCoreNodeTexMapping2D", "LuxCoreNodeTexMapping3D"},
+            True,
+        )
+    )
 
 
 def needs_edge_detector_shape(node_tree):
-    # TODO better check would be if the node is linked to the output and actually used
-    for node in utils_node.find_nodes(node_tree, "LuxCoreNodeTexWireframe", True):
-        if node.hide_planar_edges:
-            return True
-    return False
+    return any(
+        node.hide_planar_edges
+        for node in utils_node.find_nodes(
+            node_tree, "LuxCoreNodeTexWireframe", True
+        )
+    )
 
 
 def uses_displacement(obj):
@@ -63,8 +68,7 @@ def uses_displacement(obj):
 def define_shapes(input_shape, node_tree, exporter, depsgraph, scene_props):
     shape = input_shape
 
-    output_node = get_active_output(node_tree)
-    if output_node:
+    if output_node := get_active_output(node_tree):
         # Convert the whole shape stack
         shape = output_node.inputs["Shape"].export_shape(exporter, depsgraph, scene_props, shape)
 
@@ -73,8 +77,8 @@ def define_shapes(input_shape, node_tree, exporter, depsgraph, scene_props):
     if uses_pointiness(node_tree):
         # Note: Since Blender still does not make use of the vertex alpha channel
         # as of 2.82, we use it to store the pointiness information.
-        pointiness_shape = input_shape + "_pointiness"
-        prefix = "scene.shapes." + pointiness_shape + "."
+        pointiness_shape = f"{input_shape}_pointiness"
+        prefix = f"scene.shapes.{pointiness_shape}" + "."
         scene_props.Set(pyluxcore.Property(prefix + "type", "pointiness"))
         scene_props.Set(pyluxcore.Property(prefix + "source", shape))
         shape = pointiness_shape
@@ -95,15 +99,15 @@ def define_shapes(input_shape, node_tree, exporter, depsgraph, scene_props):
         scene_props.Set(pyluxcore.Property(prefix + "dataindex", island_aov_index))
         shape = island_aov_shape
 
-        if _uses_random_per_island_uniform_float:
-            # Used to normalize the island indices from ints to floats in 0..1 range
-            random_tri_aov_shape = input_shape + "_random_tri_aov_shape"
-            prefix = "scene.shapes." + random_tri_aov_shape + "."
-            scene_props.Set(pyluxcore.Property(prefix + "type", "randomtriangleaov"))
-            scene_props.Set(pyluxcore.Property(prefix + "source", shape))
-            scene_props.Set(pyluxcore.Property(prefix + "srcdataindex", island_aov_index))
-            scene_props.Set(pyluxcore.Property(prefix + "dstdataindex", TriAOVDataIndices.RANDOM_PER_ISLAND_FLOAT))
-            shape = random_tri_aov_shape
+    if _uses_random_per_island_uniform_float:
+        # Used to normalize the island indices from ints to floats in 0..1 range
+        random_tri_aov_shape = input_shape + "_random_tri_aov_shape"
+        prefix = "scene.shapes." + random_tri_aov_shape + "."
+        scene_props.Set(pyluxcore.Property(prefix + "type", "randomtriangleaov"))
+        scene_props.Set(pyluxcore.Property(prefix + "source", shape))
+        scene_props.Set(pyluxcore.Property(prefix + "srcdataindex", island_aov_index))
+        scene_props.Set(pyluxcore.Property(prefix + "dstdataindex", TriAOVDataIndices.RANDOM_PER_ISLAND_FLOAT))
+        shape = random_tri_aov_shape
 
     if needs_edge_detector_shape(node_tree):
         edge_detector_shape = input_shape + "_edge_detector"
@@ -128,9 +132,7 @@ def warn_about_subdivision_levels(obj):
 
 
 def get_material(obj, material_index, depsgraph):
-    material_override = depsgraph.view_layer_eval.material_override
-
-    if material_override:
+    if material_override := depsgraph.view_layer_eval.material_override:
         mat = material_override
     elif material_index < len(obj.material_slots):
         mat = obj.material_slots[material_index].material
@@ -149,13 +151,11 @@ def get_material(obj, material_index, depsgraph):
         
 
 def export_material(obj, material_index, exporter, depsgraph, is_viewport_render):
-    mat = get_material(obj, material_index, depsgraph)
-
-    if mat:
+    if mat := get_material(obj, material_index, depsgraph):
         # We need the original material, not the evaluated one, otherwise 
         # Blender gives us "NodeTreeUndefined" as mat.node_tree.bl_idname
         mat = mat.original
-        
+
         lux_mat_name, mat_props = material.convert(exporter, depsgraph, mat, is_viewport_render, obj.name)
         node_tree = mat.luxcore.node_tree
         return lux_mat_name, mat_props, node_tree
@@ -256,11 +256,7 @@ class ObjectCache2:
                     _update_stats(engine, obj.name, " (dupli)", index, obj_count_estimate)
 
                 try:
-                    # The code in this try block is performance-critical, as it is
-                    # executed most often when exporting millions of instances.
-                    duplis = instances[obj.original.as_pointer()]
-                    # If duplis is None, then a non-exportable object like a curve with zero faces is being duplicated
-                    if duplis:
+                    if duplis := instances[obj.original.as_pointer()]:
                         obj_id = dg_obj_instance.object.original.luxcore.id
                         if obj_id == -1:
                             obj_id = dg_obj_instance.random_id & 0xfffffffe
@@ -273,9 +269,17 @@ class ObjectCache2:
                         if engine.test_break():
                             return None
                         _update_stats(engine, obj.name, " (dupli)", index, obj_count_estimate)
-                    exported_obj = self._convert_obj(exporter, dg_obj_instance, obj, depsgraph, luxcore_scene,
-                                                     scene_props, is_viewport_render, view_layer, engine)
-                    if exported_obj:
+                    if exported_obj := self._convert_obj(
+                        exporter,
+                        dg_obj_instance,
+                        obj,
+                        depsgraph,
+                        luxcore_scene,
+                        scene_props,
+                        is_viewport_render,
+                        view_layer,
+                        engine,
+                    ):
                         # Note, the transformation matrix and object ID of this first instance is not added
                         # to the duplication list, since it already exists in the scene
                         instances[obj.original.as_pointer()] = Duplis(exported_obj)
@@ -304,7 +308,7 @@ class ObjectCache2:
         objects are available for luxcore_scene. Needs to happen before this method is called.
         """
         start_time = time()
-        
+
         for duplis in instances.values():
             if duplis is None:
                 # If duplis is None, then a non-exportable object like a curve with zero faces is being duplicated
@@ -316,14 +320,14 @@ class ObjectCache2:
 
             for part in duplis.exported_obj.parts:
                 src_name = part.lux_obj
-                dst_name = src_name + "dupli"
+                dst_name = f"{src_name}dupli"
                 luxcore_scene.DuplicateObject(src_name, dst_name, duplis.get_count(), duplis.matrices, duplis.object_ids)
 
-                # TODO: support steps and times (motion blur)
-                # steps = 0 # TODO
-                # times = array("f", [])
-                # luxcore_scene.DuplicateObject(src_name, dst_name, count, steps, times, transformations)
-        
+                        # TODO: support steps and times (motion blur)
+                        # steps = 0 # TODO
+                        # times = array("f", [])
+                        # luxcore_scene.DuplicateObject(src_name, dst_name, count, steps, times, transformations)
+
         if stats:
             stats.export_time_instancing.value = time() - start_time
 
@@ -341,7 +345,11 @@ class ObjectCache2:
         # The instancing state has to be part of the key because a non-instanced mesh
         # has its transformation baked-in and can't be used by other instances.
         modified = utils.has_deforming_modifiers(obj.original)
-        source = obj.original.data if (use_instancing and not (modified or obj.type == "META")) else obj.original
+        source = (
+            obj.original.data
+            if use_instancing and not modified and obj.type != "META"
+            else obj.original
+        )
         key = utils.get_luxcore_name(source, is_viewport_render)
         if use_instancing:
             key += "_instance"
@@ -389,14 +397,12 @@ class ObjectCache2:
                                              scene_props, is_viewport_render, is_for_duplication,
                                              dg_obj_instance.matrix_world, visible_to_cam, engine)
                     if lux_shape:
-                        mat = get_material(obj, mat_index, depsgraph)
-                        if mat:
-                            node_tree = mat.luxcore.node_tree
-                            if node_tree:
+                        if mat := get_material(obj, mat_index, depsgraph):
+                            if node_tree := mat.luxcore.node_tree:
                                 lux_shape = define_shapes(lux_shape, node_tree, exporter, depsgraph, scene_props)
-                        
+
                         self.exported_hair[psys_key] = lux_shape
-                        
+
                 if lux_shape:
                     lux_mat, mat_props, node_tree = export_material(obj, mat_index, exporter, depsgraph,
                                                                     is_viewport_render)
@@ -487,19 +493,16 @@ class ObjectCache2:
                         transform = None  # In viewport render, everything is instanced
                         exported_mesh = mesh_converter.convert(obj, mesh_key, depsgraph, luxcore_scene,
                                                                is_viewport_render, use_instancing, transform)
-                        
+
                         if exported_mesh:
                             for i in range(len(exported_mesh.mesh_definitions)):
                                 shape, mat_index = exported_mesh.mesh_definitions[i]
-                                mat = get_material(obj, mat_index, depsgraph)
-                                
-                                if mat:
-                                    node_tree = mat.luxcore.node_tree
-                                    if node_tree:
+                                if mat := get_material(obj, mat_index, depsgraph):
+                                    if node_tree := mat.luxcore.node_tree:
                                         shape = define_shapes(shape, node_tree, exporter, depsgraph, scene_props)
-                                
+
                                 exported_mesh.mesh_definitions[i] = shape, mat_index
-                        
+
                         self.exported_meshes[mesh_key] = exported_mesh
 
                         # We arrive here not only when the mesh is edited, but also when the material
@@ -541,7 +544,9 @@ class ObjectCache2:
             obj_key = utils.make_key_from_instance(dg_obj_instance)
             mesh_key = self._get_mesh_key(obj, use_instancing)
 
-            if (obj_key in self.exported_objects and obj.type != "LIGHT") and not mesh_key in redefine_objs_with_these_mesh_keys:
+            if (
+                obj_key in self.exported_objects and obj.type != "LIGHT"
+            ) and mesh_key not in redefine_objs_with_these_mesh_keys:
                 exported_obj = self.exported_objects[obj_key]
                 updated = False
 
